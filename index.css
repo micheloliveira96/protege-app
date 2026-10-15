@@ -1,25 +1,30 @@
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100%;
-}
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-button {
-  font-family: inherit;
-}
-
-button:focus-visible {
-  outline: 3px solid #93c5fd;
-  outline-offset: 3px;
-}
+* { box-sizing: border-box; }
+:root { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; color: #17243a; background: #f3f6fb; font-synthesis: none; }
+html, body, #root { margin: 0; min-width: 320px; min-height: 100%; }
+body { min-height: 100vh; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; }
+.page-shell { min-height: 100vh; padding: 48px 20px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at top, #fff 0%, #f3f6fb 70%); }
+.login-card { width: 100%; max-width: 440px; padding: 38px 36px 30px; background: #fff; border: 1px solid #e5eaf2; border-radius: 22px; box-shadow: 0 18px 55px rgba(24,43,75,.09); }
+.brand { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 34px; }
+.brand-mark { width: 58px; height: 58px; display: grid; place-items: center; margin-bottom: 12px; border-radius: 17px; background: #10294b; }
+.brand-mark svg { width: 39px; height: 39px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.brand-name { color: #10294b; font-size: 25px; font-weight: 800; letter-spacing: 3px; }
+.brand-tagline { margin-top: 6px; color: #748197; font-size: 12px; }
+.form-heading { margin-bottom: 26px; }
+.form-heading h1 { margin: 0 0 8px; color: #14233a; font-size: 25px; line-height: 1.25; letter-spacing: -.5px; }
+.form-heading p { margin: 0; color: #718096; font-size: 14px; line-height: 1.55; }
+form { display: flex; flex-direction: column; }
+form label { margin: 0 0 8px; color: #29384f; font-size: 13px; font-weight: 650; }
+form input { width: 100%; height: 49px; margin-bottom: 20px; padding: 0 14px; border: 1px solid #dce3ed; border-radius: 10px; outline: none; background: #fff; color: #17243a; font-size: 14px; transition: border-color .15s, box-shadow .15s; }
+form input::placeholder { color: #a2adbd; }
+form input:focus { border-color: #315b8c; box-shadow: 0 0 0 3px rgba(49,91,140,.12); }
+.forgot-row { display: flex; justify-content: flex-end; margin-top: -8px; margin-bottom: 22px; }
+.text-button { padding: 0; border: 0; background: transparent; color: #24578d; font-size: 13px; font-weight: 650; cursor: pointer; }
+.text-button:hover { text-decoration: underline; }
+.primary-button { min-height: 49px; border: 0; border-radius: 10px; background: #15365f; color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 5px 12px rgba(21,54,95,.15); }
+.primary-button:hover { background: #204879; }
+.notice { margin: 14px 0 0; padding: 11px 12px; border-radius: 8px; background: #f1f5f9; color: #526176; font-size: 12px; line-height: 1.5; }
+.switch-screen { margin-top: 25px; padding-top: 22px; border-top: 1px solid #edf0f5; text-align: center; color: #7b8799; font-size: 13px; line-height: 1.8; }
+.switch-screen .text-button { margin-left: 3px; }
+footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; }
+@media (max-width: 480px) { .page-shell { padding: 24px 15px 18px; } .login-card { padding: 30px 23px 24px; border-radius: 18px; } .brand { margin-bottom: 29px; } .form-heading h1 { font-size: 23px; } }
