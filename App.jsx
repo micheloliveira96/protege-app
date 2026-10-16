@@ -736,13 +736,13 @@ export default function App() {
           <div className="user-actions">
             {profilePhotoUrl ? <img className="profile-avatar" src={profilePhotoUrl} alt="Fotografia de perfil"/> : <span className="profile-avatar profile-avatar-empty" aria-hidden="true">{profile?.first_name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}</span>}
             <span className="user-email">{profile?.first_name ? profile.first_name + " " + (profile.last_name || "") : session.user.email}</span>
-            <button className="outline-button" onClick={() => { setProfileNotice(""); setProfilePhoto(null); setShowAccount(true); }}>Sua conta</button>
+            <button className="outline-button" onClick={() => { setProfileNotice(""); setProfilePhoto(null); setShowAccount(true); }}>A sua conta</button>
             <button className="outline-button" onClick={signOut}>Terminar sessão</button>
           </div>
         </header>
         <section className="dashboard-content">
           {showAccount && <div className={!profileComplete ? "account-overlay" : "account-editor-wrap"}><section className="equipment-form-card account-card">
-            <div className="form-card-heading"><div><h2>{profileComplete ? "Sua conta" : "Complete os seus dados"}</h2><p>{profileComplete ? "Pode atualizar estes dados sempre que precisar." : "Antes de continuar, complete os dados obrigatórios do seu perfil."}</p></div>{profileComplete && <button className="close-button" type="button" onClick={() => { setShowAccount(false); setProfileNotice(""); }} aria-label="Fechar">×</button>}</div>
+            <div className="form-card-heading"><div><h2>{profileComplete ? "A sua conta" : "Preencha os seus dados"}</h2><p>{profileComplete ? "Pode atualizar estes dados sempre que precisar." : "Antes de continuar, complete os dados obrigatórios do seu perfil."}</p></div>{profileComplete && <button className="close-button" type="button" onClick={() => { setShowAccount(false); setProfileNotice(""); }} aria-label="Fechar">×</button>}</div>
             {profileLoading ? <p className="muted-copy">A carregar os dados da conta...</p> : <form className="equipment-form" onSubmit={saveProfile}>
               {profileNotice && <p className="dashboard-notice" role="status">{profileNotice}</p>}
               <div className="profile-photo-editor">
