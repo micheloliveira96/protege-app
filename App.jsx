@@ -328,7 +328,8 @@ export default function App() {
     setLoading(true);
     try {
       if (screen === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const loginEmail = isAdminRoute && !email.includes("@") ? email.trim().toLowerCase() + "@admin.protege.local" : email.trim();
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
       } else if (screen === "register") {
         const { data, error } = await supabase.auth.signUp({
@@ -527,6 +528,24 @@ export default function App() {
 
   if (isAdminRoute && session?.user && !adminChecking && isAdmin) {
     return <AdminPanel supabase={supabase} user={session.user} onSignOut={signOut} />;
+  }
+
+  if (isAdminRoute && !session?.user) {
+    return (
+      <main className="page-shell admin-login-shell">
+        <section className="login-card admin-login-card">
+          <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
+          <div className="form-heading"><h1>Acesso administrativo</h1><p>Entre com as credenciais de uma conta administrativa autorizada.</p></div>
+          <form onSubmit={submit}>
+            <label htmlFor="email">Nome de utilizador ou email</label><input id="email" type="text" autoComplete="username" placeholder="admin" value={email} onChange={e=>setEmail(e.target.value)} required disabled={loading}/>
+            <label htmlFor="password">Palavra-passe</label><input id="password" type="password" autoComplete="current-password" placeholder="Introduza a palavra-passe" value={password} onChange={e=>setPassword(e.target.value)} required disabled={loading}/>
+            <button className="primary-button" type="submit" disabled={loading}>{loading ? "A verificar..." : "Entrar na administração"}</button>
+            {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
+          </form>
+          <p className="admin-login-note">Área restrita. Não existe registo público de administradores.</p>
+        </section>
+      </main>
+    );
   }
 
   if (session?.user && (profileLoading || profileUserId !== session.user.id)) {
