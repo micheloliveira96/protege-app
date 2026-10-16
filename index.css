@@ -604,3 +604,17 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
  .admin-chat-thread-messages{max-height:48vh}
  .admin-chat-thread-heading{align-items:flex-start;flex-wrap:wrap}
 }
+
+/* Anexos do chat de suporte */
+.support-chat-inputs{display:flex;flex:1;min-width:0;flex-direction:column;gap:9px}
+.support-chat-file-row{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.chat-file-button{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid #dce4ee;border-radius:9px;background:#fff;color:#344b66;font-size:12px;font-weight:750;cursor:pointer}
+.chat-file-button:hover{border-color:#d34a55;background:#fff7f7}
+.chat-file-selected{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 8px;border-radius:8px;background:#edf2f8;color:#354b65;font-size:11px;overflow-wrap:anywhere}
+.chat-file-selected button{border:0;background:transparent;color:#b42332;font-size:17px;cursor:pointer}
+.chat-attachment-link{display:block;margin-top:7px;color:inherit;text-decoration:none}
+.chat-attachment-image{display:block;width:auto;max-width:min(100%,300px);max-height:260px;object-fit:contain;border-radius:10px;border:1px solid #e0e7ef;background:#fff}
+.chat-attachment-video{display:block;width:min(100%,340px);max-height:260px;border-radius:10px;background:#111}
+.chat-attachment-file{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:10px 12px;border:1px solid #e0e7ef;border-radius:10px;background:#fff;color:#29435f;font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.support-chat-message.mine .chat-attachment-file{background:#fff8f8}
+@media(max-width:600px){.support-chat-composer{align-items:stretch;flex-direction:column}.support-chat-composer>.primary-button{align-self:flex-end}.chat-attachment-image{max-width:100%}.chat-attachment-video{width:100%}}
