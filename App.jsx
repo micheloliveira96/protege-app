@@ -53,6 +53,7 @@ export default function App() {
   const [editingId, setEditingId] = useState(null);
   const [equipmentForm, setEquipmentForm] = useState(emptyEquipment);
   const [dashboardNotice, setDashboardNotice] = useState("");
+  const [activeTab, setActiveTab] = useState("mine");
   const [lookupSerial, setLookupSerial] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState(null);
