@@ -57,6 +57,7 @@ export default function App() {
   const [lookupSerial, setLookupSerial] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState(null);
+  const [showPublicLookup, setShowPublicLookup] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -362,6 +363,10 @@ export default function App() {
 
   async function lookupEquipment(event) {
     event.preventDefault();
+    if (!supabase) {
+      setLookupResult({ error: "A consulta está temporariamente indisponível. Tente novamente mais tarde." });
+      return;
+    }
     setLookupLoading(true);
     setLookupResult(null);
     try {
@@ -521,6 +526,21 @@ export default function App() {
            <>Lembrou-se da palavra-passe? <button className="text-button" type="button" onClick={() => changeScreen("login")} disabled={loading}>Voltar a entrar</button></>}
         </div>
       </section>
+      {screen === "login" && <section className="public-lookup">
+        <button className="public-lookup-toggle" type="button" onClick={() => setShowPublicLookup(value => !value)} aria-expanded={showPublicLookup}>
+          <span><strong>Consultar equipamento</strong><small>Verifique um número de série sem criar conta</small></span><span aria-hidden="true">{showPublicLookup ? "−" : "+"}</span>
+        </button>
+        {showPublicLookup && <div className="public-lookup-content">
+          <form className="public-lookup-form" onSubmit={lookupEquipment}>
+            <label htmlFor="public-serial">Número de série</label>
+            <div className="lookup-input-row"><input id="public-serial" value={lookupSerial} onChange={e => setLookupSerial(e.target.value)} placeholder="Introduza o número de série" minLength={3} maxLength={160} required/><button className="primary-button" type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button></div>
+          </form>
+          {lookupResult && <div className={"lookup-result-card public-lookup-result " + (lookupResult.error ? "lookup-not-found" : !lookupResult.found ? "lookup-not-found" : lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição" ? "restriction-red" : "restriction-green")}>
+            {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> : !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> : <><span className="lookup-status">{lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição" ? "COM RESTRIÇÃO" : "SEM RESTRIÇÃO"}</span><strong>{lookupResult.name}</strong><p>{lookupResult.status === "Roubado" ? "ATENÇÃO: este equipamento está registado como roubado." : lookupResult.restriction_status === "Com restrição" ? "ATENÇÃO: este equipamento tem uma restrição registada na PROTEGE." : "Não existe uma restrição assinalada neste registo."}</p></>}
+          </div>}
+          <p className="field-help public-lookup-privacy">A consulta não mostra o nome, contacto ou fotografias do proprietário.</p>
+        </div>}
+      </section>}
       <footer>PROTEGE · Registo e proteção de equipamentos</footer>
     </main>
   );
