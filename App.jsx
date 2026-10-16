@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabaseClient.js";
+import AdminDashboard from "./AdminDashboard.jsx";
 
 const emptyEquipment = {
   name: "", category: "Eletrónica", brand: "", model: "",
@@ -40,7 +41,7 @@ function compressPhoto(file) {
 }
 
 
-function AdminPanel({ supabase, user, onSignOut }) {
+function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
   const [admins, setAdmins] = useState([]);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [username, setUsername] = useState("");
@@ -145,7 +146,7 @@ function AdminPanel({ supabase, user, onSignOut }) {
           <div className="brand-mark small-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div>
           <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
         </div>
-        <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-email">{user.email}</span><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
+        <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-email">{user.email}</span><button className="outline-button" onClick={onBack}>Voltar ao painel</button><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
       </header>
       <section className="dashboard-content">
         <div className="dashboard-welcome admin-welcome"><div><p className="eyebrow">SUPERADMINISTRAÇÃO</p><h1>Gestão de acessos</h1><p className="muted-copy">Crie e remova contas administrativas e proteja as credenciais de acesso.</p></div></div>
@@ -212,6 +213,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState(null);
+  const [adminAccessMode, setAdminAccessMode] = useState(false);
   const [equipment, setEquipment] = useState([]);
   const [loadingEquipment, setLoadingEquipment] = useState(false);
   const [search, setSearch] = useState("");
@@ -592,6 +594,7 @@ export default function App() {
   }
 
   async function signOut() {
+    setAdminAccessMode(false);
     if (supabase) await supabase.auth.signOut();
     setShowForm(false);
     setDashboardNotice("");
@@ -614,7 +617,9 @@ export default function App() {
   }
 
   if (isAdminRoute && session?.user && !adminChecking && isAdmin) {
-    return <AdminPanel supabase={supabase} user={session.user} onSignOut={signOut} />;
+    return adminAccessMode
+      ? <AdminAccessPanel supabase={supabase} user={session.user} onSignOut={signOut} onBack={() => setAdminAccessMode(false)} />
+      : <AdminDashboard supabase={supabase} user={session.user} onSignOut={signOut} onManageAccess={() => setAdminAccessMode(true)} />;
   }
 
   if (isAdminRoute && !session?.user) {
