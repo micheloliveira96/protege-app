@@ -948,7 +948,7 @@ export default function App() {
           <div className="landing-copy">
             <div className="landing-kicker"><span className="landing-mini-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span> SEGURANÇA PARA O SEU DIA A DIA</div>
             <h1>PROTEGE</h1>
-            <h2>Cadastre seus equipamentos<br/>e <span>aumente sua segurança.</span></h2>
+            <h2>Cadastre seus equipamentos <span>e aumente sua segurança.</span></h2>
             <p className="landing-description">Uma plataforma em Portugal para cadastro e consulta de equipamentos eletrónicos, ajudando no combate ao furto e roubo.</p>
             <form className="landing-lookup" id="consultar" onSubmit={lookupEquipment}>
               <label className="landing-lookup-title" htmlFor="landing-serial">Consulta rápida</label>
