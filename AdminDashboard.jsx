@@ -53,13 +53,23 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
   }
   async function sendChatReply(event) {
     event.preventDefault();
-    if (!selectedChat || (!chatDraft.trim() && !chatAttachment) || chatSending) return;\n    if (chatAttachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(chatAttachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }\n    if (chatAttachment && chatAttachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
+    if (!selectedChat || (!chatDraft.trim() && !chatAttachment) || chatSending) return;
+    if (chatAttachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(chatAttachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }
+    if (chatAttachment && chatAttachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setChatSending(true); setError("");
     try {
-      let attachmentPath = null;\n      if (chatAttachment) {\n        const safeName = chatAttachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";\n        attachmentPath = selectedChat.user_id + "/" + selectedChat.id + "/" + crypto.randomUUID() + "-" + safeName;\n        const uploaded = await supabase.storage.from("support-chat-files").upload(attachmentPath, chatAttachment, { contentType: chatAttachment.type, upsert: false });\n        if (uploaded.error) throw uploaded.error;\n      }\n      const {data,error:invokeError}=await supabase.functions.invoke("admin-dashboard",{body:{action:"chat-send",conversation_id:selectedChat.id,message:chatDraft.trim(),attachment_path:attachmentPath,attachment_name:chatAttachment?.name||null,attachment_type:chatAttachment?.type||null,attachment_size:chatAttachment?.size||null}});
+      let attachmentPath = null;
+      if (chatAttachment) {
+        const safeName = chatAttachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
+        attachmentPath = selectedChat.user_id + "/" + selectedChat.id + "/" + crypto.randomUUID() + "-" + safeName;
+        const uploaded = await supabase.storage.from("support-chat-files").upload(attachmentPath, chatAttachment, { contentType: chatAttachment.type, upsert: false });
+        if (uploaded.error) throw uploaded.error;
+      }
+      const {data,error:invokeError}=await supabase.functions.invoke("admin-dashboard",{body:{action:"chat-send",conversation_id:selectedChat.id,message:chatDraft.trim(),attachment_path:attachmentPath,attachment_name:chatAttachment?.name||null,attachment_type:chatAttachment?.type||null,attachment_size:chatAttachment?.size||null}});
       if(invokeError) throw new Error(data?.error||invokeError.message||"Não foi possível enviar a resposta.");
       if(data?.error) throw new Error(data.error);
-      setChatDraft("");
+      setChatDraft(""); setChatAttachment(null);
+      const fileInput = document.getElementById("admin-chat-file"); if (fileInput) fileInput.value = "";
       await load("chat-messages",{conversation_id:selectedChat.id});
       await load("chat-list");
     } catch(e) { setError(e.message||"Não foi possível enviar a resposta."); }
