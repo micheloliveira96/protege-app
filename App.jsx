@@ -211,6 +211,12 @@ export default function App() {
   const [screen, setScreen] = useState("login");
   const [landingMode, setLandingMode] = useState(true);
   const [helpPage, setHelpPage] = useState(false);
+  const [supportPage, setSupportPage] = useState(false);
+  const [supportForm, setSupportForm] = useState({name:"",email:"",subject:"",message:""});
+  const [supportFile, setSupportFile] = useState(null);
+  const [supportSending, setSupportSending] = useState(false);
+  const [supportNotice, setSupportNotice] = useState("");
+  const [supportError, setSupportError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
@@ -809,6 +815,52 @@ export default function App() {
     );
   }
 
+
+  async function submitSupportMessage(event) {
+    event.preventDefault(); setSupportNotice(""); setSupportError("");
+    if (!supabase) { setSupportError("O serviço está temporariamente indisponível."); return; }
+    setSupportSending(true);
+    let uploadedPath = null;
+    try {
+      const name=supportForm.name.trim(), emailValue=supportForm.email.trim(), subject=supportForm.subject.trim(), messageValue=supportForm.message.trim();
+      if(name.length<2||emailValue.length<5||subject.length<3||messageValue.length<10) throw new Error("Preencha todos os campos obrigatórios.");
+      if(supportFile) {
+        if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(supportFile.type)) throw new Error("O anexo deve ser JPG, PNG, WebP ou PDF.");
+        if(supportFile.size>5*1024*1024) throw new Error("O anexo deve ter no máximo 5 MB.");
+        uploadedPath="incoming/"+crypto.randomUUID()+"-"+supportFile.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+        const uploaded=await supabase.storage.from("support-attachments").upload(uploadedPath,supportFile,{contentType:supportFile.type,upsert:false});
+        if(uploaded.error) throw uploaded.error;
+      }
+      const result=await supabase.from("support_messages").insert({name,email:emailValue,subject,message:messageValue,attachment_path:uploadedPath,attachment_name:supportFile?.name||null,user_id:session?.user?.id||null,status:"new"});
+      if(result.error) throw result.error;
+      setSupportForm({name:"",email:"",subject:"",message:""}); setSupportFile(null);
+      const fileInput=document.getElementById("support-attachment"); if(fileInput) fileInput.value="";
+      setSupportNotice("Mensagem enviada com sucesso. A equipa PROTEGE irá analisar o pedido.");
+    } catch(e) {
+      if(uploadedPath) await supabase.storage.from("support-attachments").remove([uploadedPath]);
+      setSupportError(e.message||"Não foi possível enviar a mensagem.");
+    } finally { setSupportSending(false); }
+  }
+
+
+  if (supportPage && landingMode && screen === "login") {
+    return <main className="protege-landing help-page support-page">
+      <header className="landing-header"><a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setSupportPage(false);}}><span className="landing-brand-shield">⬡</span><span>PROTEGE</span></a><div className="landing-actions"><button className="landing-login-button" onClick={()=>setSupportPage(false)}>Voltar ao início</button></div></header>
+      <section className="help-hero"><p className="landing-kicker">APOIO AO UTILIZADOR</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um email válido para eventual contacto.</span></div></section>
+      <section className="support-form-wrap">
+        {supportError&&<p className="dashboard-notice admin-error" role="alert">{supportError}</p>}{supportNotice&&<p className="dashboard-notice" role="status">{supportNotice}</p>}
+        <form className="support-form" onSubmit={submitSupportMessage}>
+          <div className="field-grid"><div><label htmlFor="support-name">Nome</label><input id="support-name" autoComplete="name" value={supportForm.name} onChange={e=>setSupportForm({...supportForm,name:e.target.value})} minLength={2} maxLength={120} required placeholder="O seu nome"/></div><div><label htmlFor="support-email">Email para contacto</label><input id="support-email" type="email" autoComplete="email" value={supportForm.email} onChange={e=>setSupportForm({...supportForm,email:e.target.value})} maxLength={254} required placeholder="nome@exemplo.pt"/></div></div>
+          <div><label htmlFor="support-subject">Assunto</label><input id="support-subject" value={supportForm.subject} onChange={e=>setSupportForm({...supportForm,subject:e.target.value})} minLength={3} maxLength={160} required placeholder="Ex.: problema ao registar um equipamento"/></div>
+          <div><label htmlFor="support-message">Mensagem</label><textarea id="support-message" value={supportForm.message} onChange={e=>setSupportForm({...supportForm,message:e.target.value})} minLength={10} maxLength={5000} rows={7} required placeholder="Explique como podemos ajudar..."/></div>
+          <div><label htmlFor="support-attachment">Anexo (opcional)</label><input id="support-attachment" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setSupportFile(e.target.files?.[0]||null)}/><p className="field-help">JPG, PNG, WebP ou PDF, até 5 MB. Não envie palavras-passe nem documentos desnecessários.</p></div>
+          <div className="support-form-actions"><button className="landing-signup-button" type="submit" disabled={supportSending}>{supportSending?"A enviar...":"Enviar mensagem"}</button><button className="landing-login-button" type="button" onClick={()=>setSupportPage(false)}>Cancelar</button></div>
+          <p className="support-privacy-note">Os anexos ficam em armazenamento privado e o acesso é reservado a administradores autorizados. Nesta versão, o envio regista o pedido na plataforma; não envia email automaticamente.</p>
+        </form>
+      </section><footer className="landing-footer">PROTEGE · Apoio ao utilizador</footer>
+    </main>;
+  }
+
   if (helpPage && landingMode && screen === "login") {
     return (
       <main className="protege-landing help-page">
@@ -861,7 +913,7 @@ export default function App() {
             <span>PROTEGE</span>
           </a>
           <nav className="landing-nav" aria-label="Navegação principal">
-            <a className="active" href="#inicio">Início</a><a href="#consultar">Consultar</a><a href="/como-funciona" onClick={e=>{e.preventDefault();setHelpPage(true);}}>Como funciona</a><a href="#ajuda">Ajuda</a>
+            <a className="active" href="#inicio">Início</a><a href="#consultar">Consultar</a><a href="/como-funciona" onClick={e=>{e.preventDefault();setHelpPage(true);}}>Como funciona</a><a href="/ajuda" onClick={e=>{e.preventDefault();setSupportPage(true);setSupportNotice("");setSupportError("");}}>Ajuda</a>
           </nav>
           <div className="landing-actions"><button className="landing-login-button" onClick={()=>setLandingMode(false)}><span aria-hidden="true">↪</span> Entrar</button><button className="landing-signup-button" onClick={()=>changeScreen("register")}><span aria-hidden="true">♙</span> Criar conta</button></div>
         </header>
