@@ -482,3 +482,64 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 .support-admin-message textarea{background:#f8fbff;border-color:#d5e0ec;color:#243b53}
 .support-admin-message>label{color:#324a63}
 @media(max-width:760px){.support-form-wrap{padding-inline:16px}.support-form{padding:18px}.support-admin-heading{display:block}.support-admin-heading time{display:block;margin-top:10px}.support-admin-message{padding:16px}}
+
+
+/* Redesign tecnológico da área administrativa PROTEGE */
+.admin-login-shell{
+  position:relative;isolation:isolate;overflow:hidden;min-height:100vh;padding:36px 20px;
+  background:
+    radial-gradient(ellipse at 15% 18%,rgba(198,40,40,.19),transparent 36%),
+    radial-gradient(ellipse at 85% 82%,rgba(40,88,130,.23),transparent 38%),
+    linear-gradient(135deg,#07111f 0%,#0b1728 52%,#101a2b 100%);
+}
+.admin-login-shell::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;
+  background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 88%);
+}
+.admin-login-shell::after{
+  content:"";position:absolute;z-index:-1;width:420px;height:420px;left:-220px;bottom:-240px;border:1px solid rgba(231,76,76,.22);border-radius:50%;box-shadow:0 0 0 38px rgba(231,76,76,.025),0 0 0 78px rgba(231,76,76,.02);
+}
+.admin-login-card{
+  position:relative;width:min(100%,460px);padding:38px 38px 30px;border:1px solid rgba(255,255,255,.13);
+  border-top:3px solid #e04444;border-radius:22px;background:rgba(15,27,44,.92);
+  box-shadow:0 32px 90px rgba(0,0,0,.38);backdrop-filter:blur(18px);color:#f4f7fb;
+}
+.admin-login-card .brand{margin-bottom:28px}
+.admin-login-card .brand-mark{width:62px;height:62px;border-radius:19px;background:linear-gradient(145deg,#f04b4b,#a91828);box-shadow:0 10px 30px rgba(210,38,52,.25)}
+.admin-login-card .brand-mark svg{width:34px;height:34px}
+.admin-login-card .brand-mark svg path{stroke:#fff}
+.admin-login-card .brand-name{color:#fff;font-size:29px;font-weight:850;letter-spacing:3px}
+.admin-login-card .brand-tagline{margin-top:6px;color:#a9b8ca;font-size:12px;letter-spacing:.55px}
+.admin-login-card .form-heading{text-align:center;margin-bottom:26px}
+.admin-login-card .form-heading h1{margin:0 0 9px;color:#f7f9fc;font-size:25px;letter-spacing:-.6px}
+.admin-login-card .form-heading p{margin:0;color:#9fb0c4;font-size:13px;line-height:1.7}
+.admin-login-card form{display:grid;gap:10px}
+.admin-login-card form label{margin-top:5px;color:#d7e0eb;font-size:12px;font-weight:700}
+.admin-login-card form input{width:100%;min-height:48px;padding:13px 14px;border:1px solid #33465d;border-radius:11px;background:#091626;color:#f6f8fb;outline:none;transition:border-color .18s,box-shadow .18s}
+.admin-login-card form input::placeholder{color:#71849b}
+.admin-login-card form input:focus{border-color:#ed5555;box-shadow:0 0 0 3px rgba(237,85,85,.13)}
+.admin-login-card .primary-button{min-height:49px;margin-top:10px;border:0;border-radius:11px;background:linear-gradient(110deg,#d72f3a,#ef4949);color:#fff;font-weight:800;box-shadow:0 8px 22px rgba(207,42,54,.2);transition:transform .18s,filter .18s}
+.admin-login-card .primary-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.admin-login-card .primary-button:disabled{opacity:.65;transform:none}
+.admin-login-card .admin-login-note{margin-top:22px;padding-top:17px;border-top:1px solid rgba(255,255,255,.1);color:#91a1b5;font-size:11px}
+.admin-login-card .notice{color:#ffb4b4}
+.admin-shell{background:#f4f6fa}
+.admin-shell .dashboard-topbar{border-bottom:1px solid #e6eaf0;background:rgba(255,255,255,.94);box-shadow:0 4px 20px rgba(20,35,60,.035)}
+.admin-shell .admin-welcome{padding:28px 30px;border:1px solid #e7eaf0;border-radius:18px;background:linear-gradient(120deg,#fff 0%,#fff 70%,#fff4f4 100%);box-shadow:0 8px 28px rgba(20,35,60,.035)}
+.admin-shell .admin-welcome .eyebrow{color:#c62828;letter-spacing:1.8px;font-weight:850}
+.admin-shell .admin-welcome h1{letter-spacing:-1.1px}
+.admin-shell .admin-nav{gap:8px;padding:7px;border:1px solid #e5e9f0;border-radius:14px;background:#e9edf3}
+.admin-shell .admin-nav .dashboard-tab{border-radius:9px;color:#59677a;transition:background .18s,color .18s,box-shadow .18s}
+.admin-shell .admin-nav .dashboard-tab:hover{background:rgba(255,255,255,.75);color:#26354a}
+.admin-shell .admin-nav .dashboard-tab.active{background:#fff;color:#b62230;box-shadow:0 2px 7px rgba(20,35,60,.09);font-weight:800}
+.admin-shell .admin-data-card,.admin-shell .equipment-form-card{border:1px solid #e4e9f0;border-radius:17px;box-shadow:0 8px 28px rgba(20,35,60,.045)}
+.admin-shell footer{color:#8390a2}
+@media(max-width:600px){
+ .admin-login-shell{padding:20px 14px}
+ .admin-login-card{padding:30px 23px 24px;border-radius:18px}
+ .admin-login-card .form-heading h1{font-size:23px}
+ .admin-shell .admin-welcome{padding:22px 20px}
+ .admin-shell .admin-nav{display:flex;overflow-x:auto;align-items:stretch}
+ .admin-shell .admin-nav .dashboard-tab{flex:0 0 auto}
+}
