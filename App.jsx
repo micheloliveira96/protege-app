@@ -503,7 +503,11 @@ export default function App() {
     const serial = equipmentForm.serial_number.trim();
     const imei = (equipmentForm.imei || "").trim();
     if (serial.length < 3 && imei.length < 3) {
-      setDashboardNotice("Introduza um número de série ou IMEI com pelo menos 3 caracteres.");
+      setDashboardNotice("Introduza um número de série (SN) ou IMEI válido.");
+      return;
+    }
+    if (imei && !/^\d{15}$/.test(imei)) {
+      setDashboardNotice("O IMEI deve conter exatamente 15 algarismos.");
       return;
     }
     if (existingPhotos.length + selectedPhotos.length < 2 || existingPhotos.length + selectedPhotos.length > 4) {
