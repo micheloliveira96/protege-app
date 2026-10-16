@@ -66,6 +66,8 @@ export default function App() {
   const [profileNotice, setProfileNotice] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
+  const [removeProfilePhoto, setRemoveProfilePhoto] = useState(false);
+  const [removedPhotos, setRemovedPhotos] = useState([]);
   const [profileForm, setProfileForm] = useState({ first_name: "", last_name: "", date_of_birth: "", country: "", city: "", phone: "" });
 
   useEffect(() => {
@@ -133,7 +135,8 @@ export default function App() {
     setProfileSaving(true);
     setProfileNotice("");
     try {
-      let photoPath = profile?.profile_photo_path || null;
+      const oldProfilePhotoPath = profile?.profile_photo_path || null;
+      let photoPath = removeProfilePhoto ? null : oldProfilePhotoPath;
       if (profilePhoto) {
         if (!profilePhoto.type.startsWith("image/")) throw new Error("Selecione um ficheiro de imagem válido.");
         const blob = await compressPhoto(profilePhoto);
@@ -156,7 +159,11 @@ export default function App() {
       };
       const { error } = await supabase.from("user_profiles").upsert(payload, { onConflict: "user_id" });
       if (error) throw error;
+      if (oldProfilePhotoPath && oldProfilePhotoPath !== photoPath) {
+        await supabase.storage.from("profile-photos").remove([oldProfilePhotoPath]);
+      }
       setProfilePhoto(null);
+      setRemoveProfilePhoto(false);
       await loadProfile();
       setShowAccount(false);
       setProfileNotice("");
@@ -231,6 +238,7 @@ export default function App() {
   function startNewEquipment() {
     setEditingId(null);
     setEquipmentForm(emptyEquipment);
+    setRemovedPhotos([]);
     setSelectedPhotos([]);
     setExistingPhotos([]);
     setDashboardNotice("");
@@ -239,6 +247,7 @@ export default function App() {
 
   async function startEdit(item) {
     setEditingId(item.id);
+    setRemovedPhotos([]);
     setEquipmentForm({
       name: item.name || "", category: item.category || "Outro", brand: item.brand || "",
       model: item.model || "", serial_number: item.serial_number || "",
@@ -268,6 +277,7 @@ export default function App() {
 
   function removeExistingPhoto(path) {
     setExistingPhotos(current => current.filter(photo => photo.path !== path));
+    setRemovedPhotos(current => current.includes(path) ? current : [...current, path]);
   }
 
   async function saveEquipment(event) {
@@ -285,6 +295,7 @@ export default function App() {
     setLoading(true);
     setDashboardNotice("");
     let equipmentId = editingId;
+    let cleanupWarning = "";
     try {
       const payload = {
         ...equipmentForm, name: equipmentForm.name.trim(), serial_number: serial,
@@ -310,13 +321,18 @@ export default function App() {
       const paths = [...existingPhotos.map(photo => photo.path), ...uploadedPaths];
       const { error: imageError } = await supabase.from("equipments").update({ image_paths: paths }).eq("id", equipmentId);
       if (imageError) throw imageError;
+      if (removedPhotos.length) {
+        const { error: cleanupError } = await supabase.storage.from(bucketName).remove(removedPhotos);
+        if (cleanupError) cleanupWarning = " O registo foi guardado, mas algumas fotografias antigas não puderam ser removidas.";
+      }
       setShowForm(false);
       setEditingId(null);
       setEquipmentForm(emptyEquipment);
       setSelectedPhotos([]);
       setExistingPhotos([]);
+      setRemovedPhotos([]);
       await loadEquipment();
-      setDashboardNotice(editingId ? "Equipamento atualizado com sucesso." : "Equipamento registado com sucesso.");
+      setDashboardNotice((editingId ? "Equipamento atualizado com sucesso." : "Equipamento registado com sucesso.") + cleanupWarning);
     } catch (error) {
       setDashboardNotice("Não foi possível guardar: " + (error?.message || "erro desconhecido"));
     } finally {
@@ -330,8 +346,14 @@ export default function App() {
     const { error } = await supabase.from("equipments").delete().eq("id", item.id);
     if (error) setDashboardNotice("Não foi possível eliminar: " + error.message);
     else {
+      let cleanupWarning = "";
+      const paths = Array.isArray(item.image_paths) ? item.image_paths : [];
+      if (paths.length) {
+        const { error: cleanupError } = await supabase.storage.from(bucketName).remove(paths);
+        if (cleanupError) cleanupWarning = " O registo foi eliminado, mas algumas fotografias antigas não puderam ser removidas.";
+      }
       setEquipment(current => current.filter(entry => entry.id !== item.id));
-      setDashboardNotice("Equipamento eliminado.");
+      setDashboardNotice("Equipamento eliminado." + cleanupWarning);
     }
   }
 
@@ -366,6 +388,10 @@ export default function App() {
       .some(value => (value || "").toLowerCase().includes(term)));
   }, [equipment, search]);
 
+  if (session?.user && profileLoading) {
+    return <main className="page-shell"><section className="login-card"><div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">A preparar a sua conta...</div></div><p className="muted-copy">Estamos a verificar os dados do seu perfil.</p></section></main>;
+  }
+
   if (session?.user) {
     const profileComplete = Boolean(profile?.first_name?.trim() && profile?.last_name?.trim() && profile?.phone?.trim() && profile?.country?.trim());
     const counts = {
@@ -393,8 +419,8 @@ export default function App() {
             {profileLoading ? <p className="muted-copy">A carregar os dados da conta...</p> : <form className="equipment-form" onSubmit={saveProfile}>
               {profileNotice && <p className="dashboard-notice" role="status">{profileNotice}</p>}
               <div className="profile-photo-editor">
-                {profilePhoto ? <img className="profile-photo-large" src={URL.createObjectURL(profilePhoto)} alt="Pré-visualização da fotografia de perfil"/> : profilePhotoUrl ? <img className="profile-photo-large" src={profilePhotoUrl} alt="Fotografia de perfil atual"/> : <div className="profile-photo-large profile-avatar-empty">{profileForm.first_name?.[0]?.toUpperCase() || "U"}</div>}
-                <div className="profile-photo-fields"><label htmlFor="profile-photo">Fotografia de perfil (opcional)</label><input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setProfilePhoto(e.target.files?.[0] || null)}/><p className="field-help">JPG, PNG ou WebP. Máximo 2 MB após compressão.</p></div>
+                {profilePhoto ? <img className="profile-photo-large" src={URL.createObjectURL(profilePhoto)} alt="Pré-visualização da fotografia de perfil"/> : !removeProfilePhoto && profilePhotoUrl ? <img className="profile-photo-large" src={profilePhotoUrl} alt="Fotografia de perfil atual"/> : <div className="profile-photo-large profile-avatar-empty">{profileForm.first_name?.[0]?.toUpperCase() || "U"}</div>}
+                <div className="profile-photo-fields"><label htmlFor="profile-photo">Fotografia de perfil (opcional)</label><input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { setProfilePhoto(e.target.files?.[0] || null); if (e.target.files?.[0]) setRemoveProfilePhoto(false); }}/><p className="field-help">JPG, PNG ou WebP. Máximo 2 MB após compressão.</p>{(profile?.profile_photo_path || profilePhoto) && <button type="button" className="text-button" onClick={() => { setProfilePhoto(null); setRemoveProfilePhoto(Boolean(profile?.profile_photo_path)); }}>Remover fotografia</button>}</div>
               </div>
               <div className="field-grid">
                 <div><label htmlFor="profile-first-name">Nome *</label><input id="profile-first-name" value={profileForm.first_name} onChange={e => setProfileForm({...profileForm, first_name:e.target.value})} autoComplete="given-name" maxLength={100} required/></div>
