@@ -61,6 +61,7 @@ export default function App() {
   const [existingPhotos, setExistingPhotos] = useState([]);
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileUserId, setProfileUserId] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
@@ -84,6 +85,7 @@ export default function App() {
     } else {
       setEquipment([]);
       setProfile(null);
+      setProfileUserId(null);
       setProfileLoading(false);
       setShowAccount(false);
     }
@@ -118,6 +120,7 @@ export default function App() {
         setShowAccount(true);
       }
     }
+    setProfileUserId(session.user.id);
     setProfileLoading(false);
   }
 
@@ -388,7 +391,7 @@ export default function App() {
       .some(value => (value || "").toLowerCase().includes(term)));
   }, [equipment, search]);
 
-  if (session?.user && profileLoading) {
+  if (session?.user && (profileLoading || profileUserId !== session.user.id)) {
     return <main className="page-shell"><section className="login-card"><div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">A preparar a sua conta...</div></div><p className="muted-copy">Estamos a verificar os dados do seu perfil.</p></section></main>;
   }
 
