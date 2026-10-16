@@ -33,6 +33,14 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
   }
 
   useEffect(() => { load("equipment"); }, []);
+  useEffect(() => {
+    if (section !== "chat") return;
+    const timer = window.setInterval(() => {
+      load("chat-list");
+      if (selectedChat?.id) load("chat-messages", { conversation_id: selectedChat.id });
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [section, selectedChat?.id]);
   async function saveSupportMessage(item, status) {
     setLoading(true); setError("");
     try {
