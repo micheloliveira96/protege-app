@@ -1,4 +1,3 @@
-
 {
   "name": "protege-app",
   "version": "1.0.0",
@@ -10,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "react": "latest",
