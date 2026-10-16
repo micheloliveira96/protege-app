@@ -58,6 +58,7 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
     if (chatAttachment && chatAttachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setChatSending(true); setError("");
     let attachmentPath = null;
+    let messageCreated = false;
     try {
       if (chatAttachment) {
         const safeName = chatAttachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
@@ -68,12 +69,13 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       const {data,error:invokeError}=await supabase.functions.invoke("admin-dashboard",{body:{action:"chat-send",conversation_id:selectedChat.id,message:chatDraft.trim(),attachment_path:attachmentPath,attachment_name:chatAttachment?.name||null,attachment_type:chatAttachment?.type||null,attachment_size:chatAttachment?.size||null}});
       if(invokeError) throw new Error(data?.error||invokeError.message||"Não foi possível enviar a resposta.");
       if(data?.error) throw new Error(data.error);
+      messageCreated = true;
       setChatDraft(""); setChatAttachment(null);
       const fileInput = document.getElementById("admin-chat-file"); if (fileInput) fileInput.value = "";
       await load("chat-messages",{conversation_id:selectedChat.id});
       await load("chat-list");
     } catch(e) {
-      if (attachmentPath) {
+      if (attachmentPath && !messageCreated) {
         await supabase.storage.from("support-chat-files").remove([attachmentPath]).catch(() => {});
       }
       setError(e.message||"Não foi possível enviar a resposta.");
