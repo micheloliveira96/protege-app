@@ -39,6 +39,105 @@ function compressPhoto(file) {
   });
 }
 
+
+function AdminPanel({ supabase, user, onSignOut }) {
+  const [records, setRecords] = useState([]);
+  const [loadingRecords, setLoadingRecords] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoadingRecords(true);
+      setError("");
+      const { data, error: queryError } = await supabase
+        .from("equipments")
+        .select("id,user_id,name,category,brand,model,serial_number,status,restriction_status,created_at,image_paths")
+        .order("created_at", { ascending: false });
+      if (queryError) {
+        if (!cancelled) setError("Não foi possível carregar os registos. Confirme as permissões e tente novamente.");
+        if (!cancelled) setLoadingRecords(false);
+        return;
+      }
+      const rows = await Promise.all((data || []).map(async item => {
+        const paths = Array.isArray(item.image_paths) ? item.image_paths : [];
+        const photos = await Promise.all(paths.map(async path => {
+          const { data: signed } = await supabase.storage.from("equipment-evidence").createSignedUrl(path, 600);
+          return signed?.signedUrl ? { path, url: signed.signedUrl } : null;
+        }));
+        return { ...item, photos: photos.filter(Boolean) };
+      }));
+      if (!cancelled) {
+        setRecords(rows);
+        setLoadingRecords(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [supabase]);
+
+  const term = search.trim().toLowerCase();
+  const filtered = records.filter(item =>
+    [item.name, item.category, item.brand, item.model, item.serial_number, item.status, item.restriction_status]
+      .some(value => (value || "").toLowerCase().includes(term))
+  );
+  const restricted = records.filter(item => item.status === "Roubado" || item.restriction_status === "Com restrição").length;
+  const active = records.filter(item => item.status === "Ativo").length;
+  const selected = records.find(item => item.id === selectedId);
+
+  return (
+    <main className="dashboard-shell admin-shell">
+      <header className="dashboard-topbar">
+        <div className="dashboard-brand">
+          <div className="brand-mark small-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div>
+          <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
+        </div>
+        <div className="user-actions">
+          <span className="admin-session-label">Sessão autorizada</span>
+          <span className="user-email">{user.email}</span>
+          <button className="outline-button" onClick={() => { window.location.href = "/"; }}>Área do utilizador</button>
+          <button className="outline-button" onClick={onSignOut}>Terminar sessão</button>
+        </div>
+      </header>
+      <section className="dashboard-content">
+        <div className="dashboard-welcome admin-welcome">
+          <div><p className="eyebrow">ACESSO RESTRITO</p><h1>Painel de administração</h1><p className="muted-copy">Vista inicial de consulta. As ações que alteram registos ainda não estão ativadas.</p></div>
+        </div>
+        <div className="stats-grid">
+          <article className="stat-card"><span>Total de registos</span><strong>{records.length}</strong></article>
+          <article className="stat-card"><span>Equipamentos ativos</span><strong>{active}</strong></article>
+          <article className="stat-card"><span>Com restrição / roubados</span><strong>{restricted}</strong></article>
+        </div>
+        {error && <p className="dashboard-notice" role="alert">{error}</p>}
+        <section className="equipment-list-card admin-list-card">
+          <div className="list-heading"><div><h2>Todos os equipamentos</h2><p>Dados visíveis apenas após validação da função de administrador.</p></div><input className="search-input" aria-label="Pesquisar todos os equipamentos" placeholder="Pesquisar nome, série, marca..." value={search} onChange={e => setSearch(e.target.value)}/></div>
+          {loadingRecords ? <div className="empty-state">A carregar os registos autorizados...</div> :
+            filtered.length === 0 ? <div className="empty-state"><div className="empty-icon">⌕</div><h3>{records.length ? "Nenhum resultado" : "Ainda não existem registos"}</h3><p>{records.length ? "Tente outro termo de pesquisa." : "Os equipamentos registados aparecerão aqui."}</p></div> :
+            <div className="equipment-table-wrap"><table className="equipment-table admin-table"><thead><tr><th>Equipamento</th><th>N.º de série</th><th>Estado</th><th>Restrição</th><th>Registado em</th><th>Provas</th></tr></thead><tbody>
+              {filtered.map(item => <tr key={item.id}>
+                <td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ") || item.category}</span></td>
+                <td>{item.serial_number || "—"}</td>
+                <td><span className={"status-pill status-" + (item.status || "").toLowerCase()}>{item.status}</span></td>
+                <td><span className={"admin-restriction " + (item.status === "Roubado" || item.restriction_status === "Com restrição" ? "admin-restriction-red" : "admin-restriction-green")}>{item.status === "Roubado" || item.restriction_status === "Com restrição" ? "COM RESTRIÇÃO" : "SEM RESTRIÇÃO"}</span></td>
+                <td>{item.created_at ? new Date(item.created_at).toLocaleDateString("pt-PT") : "—"}</td>
+                <td><button className="text-button" onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}>{item.photos.length} foto(s) · {selectedId === item.id ? "Fechar" : "Ver"}</button></td>
+              </tr>)}
+            </tbody></table></div>}
+        </section>
+        {selected && <section className="equipment-form-card admin-evidence-card">
+          <div className="form-card-heading"><div><h2>Provas fotográficas</h2><p>{selected.name} · Série: {selected.serial_number || "—"}</p></div><button className="close-button" type="button" onClick={() => setSelectedId(null)} aria-label="Fechar">×</button></div>
+          {selected.photos.length ? <div className="admin-photo-grid">{selected.photos.map(photo => <a key={photo.path} href={photo.url} target="_blank" rel="noreferrer"><img src={photo.url} alt={"Prova fotográfica de " + selected.name}/><span>Abrir fotografia</span></a>)}</div> : <p className="muted-copy">Não há fotografias acessíveis neste registo.</p>}
+          <p className="field-help">As ligações às fotografias expiram automaticamente após 10 minutos.</p>
+        </section>}
+        <p className="privacy-note">Área privada · Não partilhe esta sessão. Todas as permissões continuam a ser verificadas pelo Supabase.</p>
+      </section>
+      <footer>PROTEGE · Administração</footer>
+    </main>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState("login");
   const [email, setEmail] = useState("");
@@ -71,6 +170,9 @@ export default function App() {
   const [removeProfilePhoto, setRemoveProfilePhoto] = useState(false);
   const [removedPhotos, setRemovedPhotos] = useState([]);
   const [profileForm, setProfileForm] = useState({ first_name: "", last_name: "", date_of_birth: "", country: "", city: "", phone: "" });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecking, setAdminChecking] = useState(true);
+  const [isAdminRoute] = useState(() => window.location.pathname.replace(/\\/+$/, "") === "/admin");
 
   useEffect(() => {
     if (!supabase) return;
@@ -90,6 +192,25 @@ export default function App() {
       setProfileLoading(false);
       setShowAccount(false);
     }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function verifyAdmin() {
+      if (!session?.user?.id || !supabase) {
+        setIsAdmin(false);
+        setAdminChecking(false);
+        return;
+      }
+      setAdminChecking(true);
+      const { data, error } = await supabase.from("admin_users").select("user_id").eq("user_id", session.user.id).maybeSingle();
+      if (!cancelled) {
+        setIsAdmin(!error && Boolean(data));
+        setAdminChecking(false);
+      }
+    }
+    verifyAdmin();
+    return () => { cancelled = true; };
   }, [session?.user?.id]);
 
   async function loadProfile() {
@@ -395,6 +516,18 @@ export default function App() {
     return equipment.filter(item => [item.name, item.category, item.brand, item.model, item.serial_number, item.status]
       .some(value => (value || "").toLowerCase().includes(term)));
   }, [equipment, search]);
+
+  if (isAdminRoute && session?.user && adminChecking) {
+    return <main className="page-shell"><section className="login-card"><div className="brand"><div className="brand-name">PROTEGE</div><div className="brand-tagline">A verificar autorização</div></div><p className="muted-copy">A confirmar as permissões administrativas no servidor...</p></section></main>;
+  }
+
+  if (isAdminRoute && session?.user && !adminChecking && !isAdmin) {
+    return <main className="page-shell"><section className="login-card"><div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Área reservada</div></div><div className="form-heading"><h1>Acesso não autorizado</h1><p>Esta conta não tem permissões para aceder à área de administração.</p></div><button className="primary-button" onClick={() => { window.location.href = "/"; }}>Voltar à PROTEGE</button></section></main>;
+  }
+
+  if (isAdminRoute && session?.user && !adminChecking && isAdmin) {
+    return <AdminPanel supabase={supabase} user={session.user} onSignOut={signOut} />;
+  }
 
   if (session?.user && (profileLoading || profileUserId !== session.user.id)) {
     return <main className="page-shell"><section className="login-card"><div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">A preparar a sua conta...</div></div><p className="muted-copy">Estamos a verificar os dados do seu perfil.</p></section></main>;
