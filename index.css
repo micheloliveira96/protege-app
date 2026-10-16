@@ -188,3 +188,16 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
  .admin-shell .dashboard-topbar{align-items:flex-start}
  .admin-shell .user-actions{align-items:flex-end}
 }
+
+
+/* Campos de palavra-passe com controlo de visibilidade */
+.password-section{margin-top:18px;padding-top:18px;border-top:1px solid #edf0f5}
+.password-section h3,.admin-reset-form h3{margin:0 0 8px;color:#20334e;font-size:15px}
+.password-field{min-width:0}
+.password-input-wrap{position:relative;display:flex;align-items:center}
+.password-input-wrap input{width:100%;min-width:0;padding-right:78px!important}
+.password-visibility{position:absolute;right:7px;top:50%;transform:translateY(-50%);padding:6px 8px;border:0;border-radius:6px;background:#edf2f8;color:#31577f;font-size:11px;font-weight:750;cursor:pointer}
+.password-visibility:focus-visible{outline:2px solid #31577f;outline-offset:2px}
+.admin-reset-form{padding:22px 24px;border:1px solid #e1e8f1;border-radius:12px;background:#fbfcfe}
+.admin-reset-form .form-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.admin-reset-form .form-card-heading p{margin:5px 0 15px;color:#7b8799;font-size:12px}
