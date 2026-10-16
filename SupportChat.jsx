@@ -73,12 +73,22 @@ export default function SupportChat({ supabase, user }) {
     if (attachment && attachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setSending(true); setError("");
     try {
+      let attachmentPath = null;
+      if (attachment) {
+        const safeName = attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
+        attachmentPath = user.id + "/" + conversation.id + "/" + crypto.randomUUID() + "-" + safeName;
+        const uploaded = await supabase.storage.from("support-chat-files").upload(attachmentPath, attachment, { contentType: attachment.type, upsert: false });
+        if (uploaded.error) throw uploaded.error;
+      }
       const inserted = await supabase.from("support_chat_messages").insert({
-        conversation_id: conversation.id, sender_id: user.id, sender_role: "user", message
+        conversation_id: conversation.id, sender_id: user.id, sender_role: "user", message,
+        attachment_path: attachmentPath, attachment_name: attachment?.name || null,
+        attachment_type: attachment?.type || null, attachment_size: attachment?.size || null
       }).select("id").single();
       if (inserted.error) throw inserted.error;
       await supabase.from("support_conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString(), status: "waiting_admin" }).eq("id", conversation.id);
-      setDraft("");
+      setDraft(""); setAttachment(null);
+      const fileInput = document.getElementById("customer-chat-file"); if (fileInput) fileInput.value = "";
       await loadMessages(conversation.id, true);
     } catch {
       setError("Não foi possível enviar a mensagem. Tente novamente.");
@@ -100,8 +110,8 @@ export default function SupportChat({ supabase, user }) {
       </article>)}
     </div>
     <form className="support-chat-composer" onSubmit={sendMessage}>
-      <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Escreva a sua mensagem..." rows={2} maxLength={5000} aria-label="Mensagem para o suporte" disabled={!conversation || sending}/>
-      <button className="primary-button" type="submit" disabled={!conversation || !draft.trim() || sending}>{sending ? "A enviar..." : "Enviar"} <span aria-hidden="true">➤</span></button>
+      <div className="support-chat-inputs"><textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Escreva a sua mensagem..." rows={2} maxLength={5000} aria-label="Mensagem para o suporte" disabled={!conversation || sending}/><div className="support-chat-file-row"><label className="chat-file-button" htmlFor="customer-chat-file">＋ Anexar ficheiro</label><input id="customer-chat-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf" onChange={e => setAttachment(e.target.files?.[0] || null)} disabled={sending} hidden/><span className="field-help">Imagem, vídeo ou PDF · Máx. 25 MB</span>{attachment && <span className="chat-file-selected">{attachment.name} <button type="button" onClick={() => {setAttachment(null); const el=document.getElementById("customer-chat-file"); if(el) el.value="";}}>×</button></span>}</div></div>
+      <button className="primary-button" type="submit" disabled={!conversation || (!draft.trim() && !attachment) || sending}>{sending ? "A enviar..." : "Enviar"} <span aria-hidden="true">➤</span></button>
     </form>
     <p className="field-help support-chat-footnote">Não precisa de indicar nome ou email. A PROTEGE identifica a sua conta automaticamente.</p>
   </section>;
