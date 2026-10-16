@@ -153,3 +153,20 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 .public-lookup-result strong{font-size:16px}
 .public-lookup-privacy{margin:12px 0 0}
 @media(max-width:480px){.public-lookup-form .lookup-input-row{flex-direction:column}.public-lookup-form .primary-button{width:100%}}
+
+
+/* Área administrativa privada */
+.admin-shell .dashboard-content{max-width:1240px}
+.admin-welcome{margin-bottom:22px}
+.admin-session-label{padding:6px 9px;border-radius:999px;background:#eaf7ee;color:#21663a;font-size:10px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+.admin-list-card{margin-top:20px}
+.admin-table{min-width:960px}
+.admin-restriction{display:inline-block;padding:5px 7px;border-radius:6px;font-size:9px;font-weight:850;letter-spacing:.4px;white-space:nowrap}
+.admin-restriction-green{background:#eaf7ee;color:#21663a}
+.admin-restriction-red{background:#fff0f0;color:#a42626}
+.admin-evidence-card{margin-top:20px}
+.admin-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.admin-photo-grid a{display:block;overflow:hidden;border:1px solid #e0e7f0;border-radius:10px;background:#f6f8fb;color:#2b4d75;text-decoration:none;font-size:11px;font-weight:700}
+.admin-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.admin-photo-grid span{display:block;padding:9px 10px}
+@media(max-width:700px){.admin-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-session-label{display:none}.admin-table{min-width:900px}}
