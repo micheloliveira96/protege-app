@@ -394,3 +394,63 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 
 .admin-invoice-link{display:inline-block;margin-top:8px;color:#087af0;font-size:12px;font-weight:700;text-decoration:none}
 .admin-invoice-link:hover{text-decoration:underline}
+
+
+/* Página Como funciona — conteúdo educativo e responsivo */
+.help-page{min-height:100vh;background:radial-gradient(ellipse at 80% 0%,#08365b 0%,#03172b 45%,#010d1c 100%)}
+.help-page .landing-header{max-width:1240px}
+.help-hero{max-width:1240px;margin:0 auto;padding:70px clamp(22px,5vw,64px) 46px}
+.help-hero h1{max-width:850px;margin:0;color:#f4f9ff;font-size:clamp(34px,5.5vw,62px);line-height:1.08;letter-spacing:-1.8px}
+.help-hero h1 span{color:#2ab3ff}
+.help-hero>p:not(.landing-kicker){max-width:800px;color:#b3c7db;font-size:18px;line-height:1.8}
+.help-notice{max-width:820px;display:grid;gap:8px;margin-top:28px;padding:22px 24px;border:1px solid rgba(47,173,244,.35);border-radius:16px;background:linear-gradient(115deg,rgba(9,63,101,.78),rgba(4,31,56,.78));box-shadow:0 18px 50px rgba(0,0,0,.14)}
+.help-notice strong{color:#59c5ff;font-size:17px}
+.help-notice span{color:#c0d3e5;font-size:14px;line-height:1.7}
+.help-content{max-width:1240px;margin:0 auto;padding:10px clamp(22px,5vw,64px) 70px}
+.help-section-title{display:flex;align-items:flex-start;gap:17px;margin:48px 0 22px}
+.help-section-title>span{display:grid;place-items:center;flex:0 0 47px;height:47px;border:1px solid rgba(49,175,243,.45);border-radius:14px;background:#082d4b;color:#48bdff;font-size:15px;font-weight:850}
+.help-section-title h2{margin:0;color:#f2f8ff;font-size:clamp(23px,3vw,32px);line-height:1.25}
+.help-section-title p{margin:7px 0 0;color:#9fb7cf;font-size:14px;line-height:1.6}
+.help-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.help-steps article{padding:24px;border:1px solid rgba(104,163,206,.2);border-radius:17px;background:linear-gradient(145deg,rgba(9,39,66,.9),rgba(3,24,44,.88))}
+.help-step-icon{display:grid;place-items:center;width:43px;height:43px;margin-bottom:18px;border-radius:12px;background:#0b4169;color:#4bc0ff;font-size:24px;font-weight:800}
+.help-steps h3,.help-imei-instructions h3,.help-serial-card h3{margin:0 0 10px;color:#f3f8ff;font-size:18px}
+.help-steps p,.help-serial-card p,.help-imei-instructions p{margin:0;color:#aec2d6;font-size:14px;line-height:1.75}
+.help-privacy{display:flex;align-items:flex-start;gap:17px;margin:26px 0 54px;padding:24px;border:1px solid rgba(54,194,141,.3);border-radius:16px;background:rgba(4,52,48,.42)}
+.help-privacy-icon{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:50%;background:#0a594c;color:#75f0bd;font-size:23px;font-weight:900}
+.help-privacy h2{margin:0 0 8px;color:#dffcf1;font-size:19px}
+.help-privacy p{margin:0;color:#b5d8ce;font-size:14px;line-height:1.75}
+.help-imei-card,.help-serial-card{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);align-items:center;gap:30px;padding:26px;border:1px solid rgba(104,163,206,.22);border-radius:18px;background:linear-gradient(145deg,rgba(9,39,66,.9),rgba(3,24,44,.9))}
+.help-phone-illustration{display:grid;place-items:center;min-height:300px;border-radius:14px;background:radial-gradient(ellipse,rgba(13,93,145,.32),transparent 70%)}
+.help-phone-illustration svg{width:min(220px,100%);height:auto}
+.help-pill{display:inline-block;margin-bottom:13px;padding:6px 10px;border-radius:999px;background:#083c60;color:#5dc8ff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.help-imei-instructions h3{font-size:21px}
+.help-imei-instructions code{padding:4px 8px;border-radius:6px;background:#e1f4ff;color:#087bd3;font-size:1em;white-space:nowrap}
+.help-imei-instructions ol{padding-left:22px;color:#b9cde0;font-size:14px;line-height:1.8}
+.help-imei-instructions li{padding-left:3px;margin:5px 0}
+.help-caution{margin:15px 0!important;padding:12px 14px;border-left:3px solid #f2bd4c;border-radius:0 8px 8px 0;background:rgba(107,73,10,.18);color:#ffe4a4!important}
+.help-serial-card{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.help-serial-illustration{display:grid;place-items:center;min-height:220px;padding:10px;border-radius:14px;background:#f5faff}
+.help-serial-illustration svg{width:100%;height:auto;max-width:340px}
+.help-serial-card ul{padding-left:20px;color:#b9cde0;font-size:14px;line-height:1.8}
+.help-final-cta{margin-top:58px;padding:36px 25px;text-align:center;border:1px solid rgba(42,179,255,.3);border-radius:20px;background:radial-gradient(ellipse at top,rgba(9,72,114,.65),rgba(3,24,44,.9))}
+.help-final-cta h2{margin:0;color:#f5faff;font-size:clamp(26px,4vw,38px)}
+.help-final-cta p{margin:12px 0 24px;color:#b2c8dc;font-size:15px;line-height:1.7}
+.help-final-cta button{margin:5px}
+@media(max-width:760px){
+ .help-hero{padding:42px 20px 30px}
+ .help-hero h1{font-size:38px;letter-spacing:-1px}
+ .help-hero>p:not(.landing-kicker){font-size:15px;line-height:1.7}
+ .help-content{padding:0 18px 42px}
+ .help-section-title{gap:12px;margin-top:36px}
+ .help-section-title>span{flex-basis:39px;height:39px;border-radius:11px}
+ .help-section-title h2{font-size:23px}
+ .help-steps{grid-template-columns:1fr}
+ .help-steps article{padding:20px}
+ .help-imei-card,.help-serial-card{grid-template-columns:1fr;gap:18px;padding:18px}
+ .help-phone-illustration{min-height:250px}
+ .help-phone-illustration svg{width:190px}
+ .help-serial-illustration{min-height:150px}
+ .help-notice{padding:18px}
+ .help-final-cta{padding:28px 16px}
+}
