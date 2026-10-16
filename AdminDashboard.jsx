@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 
 export default function AdminDashboard({ supabase, user, onSignOut, onManageAccess }) {
   const [section, setSection] = useState("equipment");
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [replyDrafts, setReplyDrafts] = useState({});
   const [role, setRole] = useState("admin");
   const [equipment, setEquipment] = useState([]);
   const [history, setHistory] = useState([]);
@@ -18,11 +20,21 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       setRole(data.role || "admin");
       if (action === "equipment") setEquipment(data.equipment || []);
       if (action === "history") setHistory(data.history || []);
+      if (action === "support") setSupportMessages(data.messages || []);
     } catch (e) { setError(e.message || "Não foi possível carregar os dados administrativos."); }
     finally { setLoading(false); }
   }
 
   useEffect(() => { load("equipment"); }, []);
+  async function saveSupportMessage(item, status) {
+    setLoading(true); setError("");
+    try {
+      const {data,error:invokeError}=await supabase.functions.invoke("admin-dashboard",{body:{action:"support",operation:"update",id:item.id,status,admin_reply:replyDrafts[item.id]??item.admin_reply??""}});
+      if(invokeError) throw new Error(data?.error||invokeError.message||"Não foi possível atualizar a mensagem.");
+      if(data?.error) throw new Error(data.error);
+      await load("support");
+    } catch(e) {setError(e.message||"Não foi possível guardar a resposta.");setLoading(false);}
+  }
   const term = filter.trim().toLowerCase();
   const filteredEquipment = equipment.filter(item => [item.name,item.brand,item.model,item.category,item.serial_number,item.imei,item.status,item.restriction_status,item.owner_name,item.owner_phone].some(v => String(v || "").toLowerCase().includes(term)));
   const filteredHistory = history.filter(item => [item.searcher_label,item.searcher_email,item.serial_searched,item.searched_identifier_type,item.equipment_name,item.equipment_status,item.restriction_status,item.owner_name,item.owner_phone].some(v => String(v || "").toLowerCase().includes(term)));
@@ -33,10 +45,11 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-email">{user.email}</span><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
     </header>
     <section className="dashboard-content">
-      <div className="dashboard-welcome admin-welcome"><div><p className="eyebrow">ÁREA ADMINISTRATIVA</p><h1>{section === "equipment" ? "Equipamentos registados" : "Histórico de pesquisas"}</h1><p className="muted-copy">{section === "equipment" ? "Consulte os equipamentos, fotografias, situação e contacto do proprietário." : "Consulte quem pesquisou, o número de série, o resultado e o proprietário associado."}</p></div></div>
+      <div className="dashboard-welcome admin-welcome"><div><p className="eyebrow">ÁREA ADMINISTRATIVA</p><h1>{section === "equipment" ? "Equipamentos registados" : section === "history" ? "Histórico de pesquisas" : "Suporte ao utilizador"}</h1><p className="muted-copy">{section === "equipment" ? "Consulte os equipamentos, fotografias, situação e contacto do proprietário." : section === "history" ? "Consulte quem pesquisou, o número de série, o resultado e o proprietário associado." : "Mensagens enviadas pelo botão Ajuda da página inicial."}</p></div></div>
       <nav className="dashboard-tabs admin-nav" aria-label="Secções administrativas">
         <button className={"dashboard-tab " + (section === "equipment" ? "active" : "")} onClick={() => { setSection("equipment"); setFilter(""); load("equipment"); }}>Equipamentos</button>
         <button className={"dashboard-tab " + (section === "history" ? "active" : "")} onClick={() => { setSection("history"); setFilter(""); load("history"); }}>Histórico de pesquisas</button>
+        <button className={"dashboard-tab " + (section === "support" ? "active" : "")} onClick={() => { setSection("support"); setFilter(""); load("support"); }}>Suporte</button>
         {role === "super_admin" && <button className="dashboard-tab" onClick={onManageAccess}>Gestão de acessos</button>}
       </nav>
       {error && <p className="dashboard-notice admin-error" role="alert">{error}</p>}
@@ -45,6 +58,17 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
         {loading ? <div className="empty-state">A carregar equipamentos...</div> : filteredEquipment.length ? <div className="equipment-table-wrap"><table className="equipment-table admin-table admin-equipment-table"><thead><tr><th>Equipamento / fotografias</th><th>SN / IMEI</th><th>Situação</th><th>Proprietário</th><th>Telefone</th><th>Registado em</th></tr></thead><tbody>
           {filteredEquipment.map(item=><tr key={item.id}><td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model,item.category].filter(Boolean).join(" · ")}</span><div className="admin-inline-photos">{(item.photos||[]).map((photo,i)=><a href={photo} target="_blank" rel="noreferrer" key={photo} aria-label={"Abrir fotografia "+(i+1)}><img src={photo} alt={"Fotografia "+(i+1)+" de "+item.name}/></a>)}{!(item.photos||[]).length&&<span className="table-subtitle">Sem fotografias</span>}</div>{item.invoice_url&&<a className="admin-invoice-link" href={item.invoice_url} target="_blank" rel="noreferrer">Ver comprovativo de compra ↗</a>}</td><td><span className="table-subtitle">SN: {item.serial_number||"—"}</span><span className="table-subtitle">IMEI: {item.imei||"—"}</span></td><td><span className={"status-pill status-"+String(item.status||"").toLowerCase()}>{item.status||"—"}</span><span className={"admin-restriction "+(item.status==="Roubado"||item.status!=="Ativo"&&item.restriction_status==="Com restrição"?"admin-restriction-red":"admin-restriction-green")}>{item.status==="Roubado"||item.status!=="Ativo"&&item.restriction_status==="Com restrição"?"COM RESTRIÇÃO":"SEM RESTRIÇÃO"}</span></td><td><strong>{item.owner_name}</strong><span className="table-subtitle">{[item.owner_city,item.owner_country].filter(Boolean).join(" · ")}</span></td><td>{item.owner_phone||"—"}</td><td>{item.created_at?new Date(item.created_at).toLocaleString("pt-PT"):"—"}</td></tr>)}
         </tbody></table></div> : <div className="empty-state">{equipment.length?"Nenhum equipamento corresponde à pesquisa.":"Ainda não existem equipamentos registados."}</div>}
+      </section>}
+      {section === "support" && <section className="equipment-list-card admin-data-card">
+        <div className="list-heading"><div><h2>Caixa de suporte</h2><p>{supportMessages.filter(m=>m.status==="new").length} mensagens novas · {supportMessages.length} no total</p></div><button className="outline-button" onClick={()=>load("support")} disabled={loading}>Atualizar</button></div>
+        {loading ? <div className="empty-state">A carregar mensagens...</div> : supportMessages.length ? <div className="support-admin-list">{supportMessages.filter(m=>!filter||[m.name,m.email,m.subject,m.message,m.status].some(v=>String(v||"").toLowerCase().includes(filter.toLowerCase()))).map(item=><article className="support-admin-message" key={item.id}>
+          <div className="support-admin-heading"><div><span className={"support-status support-status-"+item.status}>{item.status==="new"?"Nova":item.status==="in_progress"?"Em análise":item.status==="answered"?"Respondida":"Fechada"}</span><h3>{item.subject}</h3><p>{item.name} · <a href={"mailto:"+item.email}>{item.email}</a></p></div><time>{new Date(item.created_at).toLocaleString("pt-PT")}</time></div>
+          <p className="support-admin-body">{item.message}</p>
+          {item.attachment_url&&<p><a className="admin-invoice-link" href={item.attachment_url} target="_blank" rel="noreferrer">Abrir anexo: {item.attachment_name||"ficheiro"} ↗</a></p>}
+          <label htmlFor={"reply-"+item.id}>Resposta / notas para contacto</label><textarea id={"reply-"+item.id} rows={3} maxLength={5000} value={replyDrafts[item.id]??item.admin_reply??""} onChange={e=>setReplyDrafts({...replyDrafts,[item.id]:e.target.value})} placeholder="Escreva uma resposta para registar no pedido..."/>
+          <div className="table-actions"><button className="primary-button" disabled={loading} onClick={()=>saveSupportMessage(item,"answered")}>Guardar como respondida</button><button className="outline-button" disabled={loading} onClick={()=>saveSupportMessage(item,"in_progress")}>Em análise</button><button className="outline-button" disabled={loading} onClick={()=>saveSupportMessage(item,"closed")}>Fechar pedido</button></div>
+        </article>)}</div> : <div className="empty-state">Ainda não foram recebidas mensagens de suporte.</div>}
+        <p className="field-help admin-history-note">As respostas ficam registadas nesta caixa. Nesta versão, o sistema não envia emails automaticamente; para responder por email, utilize o endereço do remetente e registe aqui o estado do pedido.</p>
       </section>}
       {section === "history" && <section className="equipment-list-card admin-data-card">
         <div className="list-heading"><div><h2>Pesquisas registadas</h2><p>{history.length} consultas. Pesquisas sem sessão aparecem como visitante sem sessão.</p></div><div className="admin-filter-actions"><input className="search-input" aria-label="Pesquisar histórico" placeholder="Pesquisar SN, IMEI, utilizador ou proprietário" value={filter} onChange={e=>setFilter(e.target.value)}/><button className="outline-button" onClick={()=>load("history")} disabled={loading}>Atualizar</button></div></div>
