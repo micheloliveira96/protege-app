@@ -9,6 +9,7 @@ const emptyEquipment = {
 const categories = ["Eletrónica", "Informática", "Telemóvel", "Fotografia", "Veículo", "Ferramenta", "Casa", "Outro"];
 const statuses = ["Ativo", "Perdido", "Roubado", "Vendido"];
 const bucketName = "equipment-evidence";
+const documentBucketName = "equipment-documents";
 
 function compressPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -229,6 +230,9 @@ export default function App() {
   const [showPublicLookup, setShowPublicLookup] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState([]);
+  const [purchaseProofFile, setPurchaseProofFile] = useState(null);
+  const [existingPurchaseProof, setExistingPurchaseProof] = useState(null);
+  const [ownershipConfirmation, setOwnershipConfirmation] = useState(false);
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileUserId, setProfileUserId] = useState(null);
@@ -458,6 +462,9 @@ export default function App() {
     setRemovedPhotos([]);
     setSelectedPhotos([]);
     setExistingPhotos([]);
+    setPurchaseProofFile(null);
+    setExistingPurchaseProof(null);
+    setOwnershipConfirmation(false);
     setDashboardNotice("");
     setShowForm(true);
   }
@@ -471,6 +478,9 @@ export default function App() {
       description: item.description || "", status: item.status || "Ativo"
     });
     setSelectedPhotos([]);
+    setPurchaseProofFile(null);
+    setExistingPurchaseProof(item.invoice_path ? { path: item.invoice_path, name: item.invoice_file_name || "Comprovativo de compra" } : null);
+    setOwnershipConfirmation(false);
     const paths = Array.isArray(item.image_paths) ? item.image_paths : [];
     const signed = await Promise.all(paths.map(async path => {
       const { data } = await supabase.storage.from(bucketName).createSignedUrl(path, 3600);
@@ -511,7 +521,15 @@ export default function App() {
       return;
     }
     if (existingPhotos.length + selectedPhotos.length < 2 || existingPhotos.length + selectedPhotos.length > 4) {
-      setDashboardNotice("Adicione entre 2 e 4 fotografias do equipamento para guardar o registo.");
+      setDashboardNotice("Adicione pelo menos 2 fotografias reais do equipamento (máximo 4).");
+      return;
+    }
+    if (!ownershipConfirmation) {
+      setDashboardNotice("Confirme a declaração de responsabilidade pelas fotografias antes de continuar.");
+      return;
+    }
+    if (purchaseProofFile && (!["application/pdf","image/jpeg","image/png","image/webp"].includes(purchaseProofFile.type) || purchaseProofFile.size > 10 * 1024 * 1024)) {
+      setDashboardNotice("O comprovativo deve ser PDF, JPG, PNG ou WebP e ter no máximo 10 MB.");
       return;
     }
     setLoading(true);
@@ -541,7 +559,20 @@ export default function App() {
         uploadedPaths.push(path);
       }
       const paths = [...existingPhotos.map(photo => photo.path), ...uploadedPaths];
-      const { error: imageError } = await supabase.from("equipments").update({ image_paths: paths }).eq("id", equipmentId);
+      const documentUpdate = {};
+      if (purchaseProofFile) {
+        const extension = purchaseProofFile.type === "application/pdf" ? "pdf" : purchaseProofFile.type === "image/png" ? "png" : purchaseProofFile.type === "image/webp" ? "webp" : "jpg";
+        const documentPath = session.user.id + "/" + equipmentId + "/" + crypto.randomUUID() + "." + extension;
+        const { error: documentError } = await supabase.storage.from(documentBucketName).upload(documentPath, purchaseProofFile, { contentType: purchaseProofFile.type, upsert: false });
+        if (documentError) throw documentError;
+        documentUpdate.invoice_path = documentPath;
+        documentUpdate.invoice_file_name = purchaseProofFile.name;
+        if (existingPurchaseProof?.path) {
+          const { error: oldDocumentError } = await supabase.storage.from(documentBucketName).remove([existingPurchaseProof.path]);
+          if (oldDocumentError) cleanupWarning = " O novo comprovativo foi guardado, mas o ficheiro anterior não pôde ser removido.";
+        }
+      }
+      const { error: imageError } = await supabase.from("equipments").update({ image_paths: paths, ...documentUpdate }).eq("id", equipmentId);
       if (imageError) throw imageError;
       if (removedPhotos.length) {
         const { error: cleanupError } = await supabase.storage.from(bucketName).remove(removedPhotos);
@@ -553,6 +584,9 @@ export default function App() {
       setSelectedPhotos([]);
       setExistingPhotos([]);
       setRemovedPhotos([]);
+      setPurchaseProofFile(null);
+      setExistingPurchaseProof(null);
+      setOwnershipConfirmation(false);
       await loadEquipment();
       setDashboardNotice((editingId ? "Equipamento atualizado com sucesso." : "Equipamento registado com sucesso.") + cleanupWarning);
     } catch (error) {
@@ -728,7 +762,9 @@ export default function App() {
                   <div><label htmlFor="eq-model">Modelo</label><input id="eq-model" value={equipmentForm.model} onChange={e => setEquipmentForm({...equipmentForm, model:e.target.value})} placeholder="Ex.: iPhone 15 Pro" maxLength={100}/></div>
                   <div className="field-full"><label htmlFor="eq-serial">Número de série (SN)</label><input id="eq-serial" value={equipmentForm.serial_number} onChange={e => setEquipmentForm({...equipmentForm, serial_number:e.target.value})} placeholder="Introduza o número de série (SN)" maxLength={160}/><label htmlFor="eq-imei">IMEI</label><input id="eq-imei" value={equipmentForm.imei || ""} onChange={e => setEquipmentForm({...equipmentForm, imei:e.target.value.replace(/[^0-9]/g, "").slice(0, 16)})} placeholder="Introduza o IMEI (15 dígitos, se aplicável)" inputMode="numeric" maxLength={16}/><p className="field-help">Preencha o SN, o IMEI ou ambos. O IMEI é usado principalmente em telemóveis e alguns equipamentos com ligação móvel.</p></div>
                   <div className="field-full"><label htmlFor="eq-description">Notas / descrição</label><textarea id="eq-description" rows="3" value={equipmentForm.description} onChange={e => setEquipmentForm({...equipmentForm, description:e.target.value})} placeholder="Características, acessórios ou outros detalhes" maxLength={1500}/></div>
-                  <div className="field-full"><label htmlFor="eq-photos">Fotografias do equipamento * (2 a 4)</label><input id="eq-photos" type="file" accept="image/*" multiple onChange={addPhotos}/><p className="field-help">As fotografias são guardadas num espaço privado. Cada imagem é comprimida antes do envio.</p></div>
+                  <div className="field-full"><label htmlFor="eq-photos">Fotografias do equipamento * (mínimo 2, máximo 4)</label><input id="eq-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={addPhotos}/><p className="field-help">Obrigatório: pelo menos 2 fotografias do próprio equipamento. Mostre o equipamento e uma fotografia legível do SN ou IMEI. Sem as fotografias não é possível registar. Os ficheiros ficam privados.</p></div>
+                  <div className="field-full"><label htmlFor="eq-purchase-proof">Fatura/ fatura-recibo ou comprovativo de compra (opcional)</label><input id="eq-purchase-proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={e=>setPurchaseProofFile(e.target.files?.[0] || null)}/><p className="field-help">Pode anexar uma fatura, fatura-recibo ou comprovativo de compra em PDF, JPG, PNG ou WebP (máximo 10 MB). Este documento ficará privado e poderá ajudar a comprovar a propriedade.</p>{existingPurchaseProof && !purchaseProofFile && <p className="field-help">Comprovativo atual: {existingPurchaseProof.name}. Se selecionar outro ficheiro, será substituído.</p>}{purchaseProofFile && <p className="field-help">Novo ficheiro: {purchaseProofFile.name}</p>}</div>
+                  <div className="field-full ownership-confirmation"><label><input type="checkbox" checked={ownershipConfirmation} onChange={e=>setOwnershipConfirmation(e.target.checked)} required/> <span>Declaro que as imagens são reais, correspondem ao equipamento que estou a registar e mostram o equipamento e o respetivo número de série (SN) ou IMEI de forma visível. Confirmo que as informações fornecidas são verdadeiras e responsabilizo-me pela sua autenticidade.</span></label></div>
                 </div>
                 {(existingPhotos.length + selectedPhotos.length > 0) && <div className="photo-grid">
                   {existingPhotos.map(photo => <div className="photo-preview" key={photo.path}><img src={photo.url} alt="Fotografia guardada do equipamento"/><button type="button" onClick={() => removeExistingPhoto(photo.path)} aria-label="Remover fotografia">×</button></div>)}
