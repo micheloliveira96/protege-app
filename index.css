@@ -220,3 +220,121 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
  .admin-equipment-table{min-width:1050px}
  .admin-history-table{min-width:1050px}
 }
+
+
+/* Homepage PROTEGE — identidade tecnológica responsiva */
+.protege-landing{min-height:100vh;overflow:hidden;color:#edf7ff;background:radial-gradient(ellipse at 72% 40%,#07396a 0%,#031b35 42%,#010d1c 100%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.landing-header{height:86px;max-width:1600px;margin:0 auto;padding:0 clamp(22px,5.2vw,90px);display:flex;align-items:center;justify-content:space-between;gap:28px;border-bottom:1px solid rgba(98,174,229,.18);position:relative;z-index:4;background:rgba(1,13,28,.45)}
+.landing-brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:#2ba8ff;font-size:30px;font-weight:850;letter-spacing:1px;white-space:nowrap}
+.landing-brand-shield{width:39px;height:43px;display:grid;place-items:center}
+.landing-brand-shield svg{width:100%;height:100%;fill:none;stroke:#1fa8ff;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.landing-nav{display:flex;align-items:center;gap:clamp(18px,3vw,52px);height:100%}
+.landing-nav a{height:100%;display:flex;align-items:center;position:relative;text-decoration:none;color:#c6d4e5;font-size:15px;font-weight:550;white-space:nowrap}
+.landing-nav a:hover,.landing-nav a.active{color:#27b6ff}
+.landing-nav a.active:after{content:"";position:absolute;bottom:0;left:0;right:0;height:3px;background:#1daaff}
+.landing-actions{display:flex;align-items:center;gap:12px}
+.landing-actions button{height:48px;padding:0 23px;border-radius:12px;font-size:14px;font-weight:750;cursor:pointer;white-space:nowrap;transition:transform .18s,background .18s}
+.landing-actions button:hover,.landing-lookup button:hover{transform:translateY(-1px)}
+.landing-login-button{color:#e9f5ff;border:1px solid #138fe0;background:rgba(2,27,52,.7)}
+.landing-signup-button{color:white;border:1px solid #179bff;background:linear-gradient(135deg,#23b4ff,#0875ed);box-shadow:0 8px 26px rgba(0,130,255,.18)}
+.landing-hero{position:relative;max-width:1600px;min-height:590px;margin:0 auto;padding:75px clamp(24px,6.2vw,108px) 36px;display:flex;align-items:center}
+.landing-hero:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 65% 65%,rgba(0,151,255,.18),transparent 55%),linear-gradient(90deg,rgba(1,13,28,.98) 0%,rgba(1,17,34,.94) 34%,rgba(1,20,39,.38) 68%,rgba(1,13,28,.06) 100%)}
+.landing-hero:after{content:"";position:absolute;inset:0;opacity:.22;pointer-events:none;background-image:radial-gradient(#1688cf 1px,transparent 1px);background-size:20px 20px;mask-image:linear-gradient(90deg,transparent 20%,#000 80%)}
+.landing-art{position:absolute;z-index:0;right:0;top:0;bottom:0;width:65%;display:flex;align-items:center;justify-content:flex-end;pointer-events:none}
+.landing-art:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#03182d 0%,rgba(3,24,45,.25) 30%,transparent 65%),linear-gradient(0deg,#03162a 0%,transparent 20%,transparent 83%,#03172b 100%);z-index:1}
+.landing-art img{width:100%;height:100%;object-fit:contain;object-position:center right;filter:drop-shadow(0 0 35px rgba(0,143,255,.14))}
+.landing-copy{position:relative;z-index:2;width:min(760px,64%);padding:4px 0 22px}
+.landing-kicker{display:inline-flex;align-items:center;gap:10px;margin-bottom:17px;padding:11px 16px;border:1px solid rgba(36,164,239,.38);border-radius:15px;background:linear-gradient(100deg,rgba(11,74,119,.68),rgba(5,34,61,.68));color:#50c5ff;font-size:13px;font-weight:800;letter-spacing:.35px}
+.landing-mini-shield{font-size:22px;line-height:1;color:#35baff}
+.landing-copy h1{margin:0 0 0 -5px;color:#18aaff;font-size:clamp(70px,8vw,126px);line-height:.98;font-weight:950;letter-spacing:-4px;text-shadow:0 7px 36px rgba(0,134,255,.18)}
+.landing-copy h2{margin:13px 0 17px;color:#f1f7ff;font-size:clamp(25px,2.65vw,40px);line-height:1.22;font-weight:780;letter-spacing:-.7px}
+.landing-copy h2 span{color:#28adff}
+.landing-description{max-width:640px;margin:0 0 28px;color:#a9bdd2;font-size:clamp(15px,1.2vw,18px);line-height:1.75}
+.landing-lookup{display:flex;align-items:center;gap:10px;width:min(790px,100%);min-height:62px;padding:7px 8px 7px 18px;border:1px solid rgba(255,255,255,.85);border-radius:13px;background:#fff;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+.landing-search-icon{color:#657c96;font-size:32px;line-height:1;transform:rotate(-20deg)}
+.landing-lookup input{flex:1;min-width:0;height:45px;border:0;outline:0;background:transparent;color:#18314c;font-size:15px}
+.landing-lookup input::placeholder{color:#8494a9;opacity:1}
+.landing-lookup button{min-height:46px;padding:0 22px;display:flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:10px;background:linear-gradient(135deg,#22aaff,#087af0);color:#fff;font-size:14px;font-weight:750;white-space:nowrap;cursor:pointer}
+.landing-lookup button span{font-size:22px}
+.landing-lookup-result{position:relative;z-index:3;width:min(790px,100%);margin-top:14px;padding:16px 18px;border:1px solid;border-radius:12px}
+.landing-lookup-result strong{display:block;margin-top:5px;font-size:18px}
+.landing-lookup-result p{margin:6px 0 0;font-size:13px;line-height:1.5}
+.landing-benefits{max-width:1600px;margin:0 auto;padding:24px clamp(24px,6.2vw,108px) 35px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:linear-gradient(180deg,rgba(0,26,51,.35),rgba(1,15,31,.94));border-top:1px solid rgba(32,157,230,.18);position:relative;z-index:2}
+.landing-benefits article{display:flex;align-items:center;gap:16px;min-width:0;padding:8px clamp(10px,2vw,30px);border-right:1px solid rgba(75,148,205,.16)}
+.landing-benefits article:first-child{padding-left:0}
+.landing-benefits article:last-child{padding-right:0;border-right:0}
+.benefit-icon{width:65px;height:65px;flex:0 0 65px;display:grid;place-items:center;border:1px solid rgba(55,163,231,.25);border-radius:50%;background:radial-gradient(circle at 40% 35%,#154a78,#071d36);color:#39b7ff;font-size:36px;box-shadow:inset 0 0 18px rgba(0,145,255,.08)}
+.landing-benefits strong{display:block;color:#f0f7ff;font-size:14px;line-height:1.4}
+.landing-benefits p{margin:5px 0 0;color:#a6bad0;font-size:12px;line-height:1.5}
+.landing-footer{max-width:1600px;margin:0 auto;padding:16px clamp(24px,6.2vw,108px) 22px;display:flex;justify-content:space-between;gap:16px;color:#7895b2;font-size:11px;background:#010d1c}
+.landing-footer span{text-align:right}
+.auth-page{background:radial-gradient(ellipse at top,#082e50 0%,#03162a 55%,#010d1c 100%);color:#17243a}
+.auth-page .login-card{box-shadow:0 24px 90px rgba(0,0,0,.28)}
+.auth-home-link{align-self:flex-start;margin:0 0 14px;padding:8px 0;border:0;background:transparent;color:#a9dfff;font-size:13px;font-weight:650;cursor:pointer}
+@media(max-width:1100px){
+ .landing-header{gap:18px;padding-inline:28px}
+ .landing-brand{font-size:25px}
+ .landing-nav{gap:18px}
+ .landing-nav a{font-size:13px}
+ .landing-actions button{padding-inline:15px}
+ .landing-hero{min-height:550px;padding-top:65px;padding-bottom:40px}
+ .landing-copy{width:68%}
+ .landing-art{width:62%;right:-5%}
+ .landing-copy h1{font-size:clamp(66px,8vw,100px)}
+ .landing-benefits{padding-inline:28px}
+ .landing-benefits article{gap:10px;padding-inline:14px}
+ .benefit-icon{width:52px;height:52px;flex-basis:52px;font-size:29px}
+}
+@media(max-width:760px){
+ .protege-landing{min-height:100svh}
+ .landing-header{height:auto;min-height:74px;padding:13px 18px;display:grid;grid-template-columns:1fr auto;gap:12px}
+ .landing-brand{font-size:24px;gap:8px}
+ .landing-brand-shield{width:31px;height:34px}
+ .landing-nav{grid-column:1/-1;grid-row:2;order:3;justify-content:space-between;gap:10px;height:35px}
+ .landing-nav a{font-size:12px;height:35px}
+ .landing-nav a.active:after{height:2px}
+ .landing-actions{gap:7px}
+ .landing-actions button{height:39px;padding:0 12px;border-radius:9px;font-size:12px}
+ .landing-hero{min-height:unset;display:block;padding:43px 20px 32px}
+ .landing-hero:before{background:linear-gradient(180deg,rgba(1,13,28,.44) 0%,rgba(1,13,28,.76) 35%,#03162a 78%),radial-gradient(ellipse at 78% 12%,rgba(0,151,255,.28),transparent 50%)}
+ .landing-hero:after{opacity:.14}
+ .landing-art{top:0;right:-15%;bottom:auto;width:100%;height:350px;opacity:.55;align-items:flex-start}
+ .landing-art:before{background:linear-gradient(90deg,#03162a 0%,rgba(3,22,42,.16) 55%,transparent 100%),linear-gradient(180deg,rgba(3,22,42,.06),#03162a 96%)}
+ .landing-art img{height:100%;width:100%;object-fit:contain;object-position:top right}
+ .landing-copy{width:100%;padding:8px 0 0}
+ .landing-kicker{font-size:10px;padding:8px 11px;margin-bottom:16px;border-radius:10px}
+ .landing-mini-shield{font-size:17px}
+ .landing-copy h1{font-size:clamp(55px,15vw,84px);letter-spacing:-2.5px}
+ .landing-copy h2{margin-top:10px;font-size:clamp(24px,6.3vw,34px);line-height:1.2;letter-spacing:-.45px}
+ .landing-copy h2 br{display:none}
+ .landing-description{font-size:14px;line-height:1.65;margin-bottom:22px;max-width:550px}
+ .landing-lookup{min-height:unset;gap:6px;padding:6px 6px 6px 12px;border-radius:11px}
+ .landing-search-icon{font-size:25px}
+ .landing-lookup input{height:43px;font-size:12px}
+ .landing-lookup input::placeholder{color:#788ba0}
+ .landing-lookup button{min-height:42px;padding:0 12px;font-size:12px;gap:5px}
+ .landing-lookup button span{font-size:18px}
+ .landing-benefits{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 18px 20px;gap:0}
+ .landing-benefits article{padding:13px 8px;gap:10px;border-right:0;border-bottom:1px solid rgba(75,148,205,.16)}
+ .landing-benefits article:nth-child(odd){padding-left:0}
+ .landing-benefits article:nth-child(even){padding-right:0}
+ .landing-benefits article:nth-child(n+3){border-bottom:0}
+ .benefit-icon{width:42px;height:42px;flex-basis:42px;font-size:24px}
+ .landing-benefits strong{font-size:11px}
+ .landing-benefits p{font-size:10px;line-height:1.4}
+ .landing-footer{padding:16px 18px 20px;display:block;line-height:1.7}
+ .landing-footer span{display:block;text-align:left;margin-top:4px}
+}
+@media(max-width:390px){
+ .landing-header{padding-inline:13px}
+ .landing-brand{font-size:21px}
+ .landing-actions button{padding-inline:9px;font-size:11px}
+ .landing-nav a{font-size:11px}
+ .landing-hero{padding-inline:15px}
+ .landing-lookup{padding-left:8px}
+ .landing-lookup input{font-size:11px}
+ .landing-lookup button{padding-inline:9px}
+ .landing-benefits{padding-inline:13px}
+ .landing-benefits article{gap:7px}
+ .benefit-icon{width:36px;height:36px;flex-basis:36px;font-size:21px}
+}
