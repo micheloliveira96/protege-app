@@ -4,6 +4,11 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
   const [section, setSection] = useState("equipment");
   const [supportMessages, setSupportMessages] = useState([]);
   const [replyDrafts, setReplyDrafts] = useState({});
+  const [chatConversations, setChatConversations] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatSending, setChatSending] = useState(false);
   const [role, setRole] = useState("admin");
   const [equipment, setEquipment] = useState([]);
   const [history, setHistory] = useState([]);
@@ -11,16 +16,18 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function load(action) {
+  async function load(action, extra = {}) {
     setLoading(true); setError("");
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke("admin-dashboard", { body: { action } });
+      const { data, error: invokeError } = await supabase.functions.invoke("admin-dashboard", { body: { action, ...extra } });
       if (invokeError) throw new Error(data?.error || invokeError.message || "Não foi possível carregar os dados.");
       if (data?.error) throw new Error(data.error);
       setRole(data.role || "admin");
       if (action === "equipment") setEquipment(data.equipment || []);
       if (action === "history") setHistory(data.history || []);
       if (action === "support") setSupportMessages(data.messages || []);
+      if (action === "chat-list") setChatConversations(data.conversations || []);
+      if (action === "chat-messages") { setChatMessages(data.messages || []); setSelectedChat(data.conversation ? {...data.conversation, user_name:data.user_name} : null); }
     } catch (e) { setError(e.message || "Não foi possível carregar os dados administrativos."); }
     finally { setLoading(false); }
   }
@@ -34,6 +41,20 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       if(data?.error) throw new Error(data.error);
       await load("support");
     } catch(e) {setError(e.message||"Não foi possível guardar a resposta.");setLoading(false);}
+  }
+  async function sendChatReply(event) {
+    event.preventDefault();
+    if (!selectedChat || !chatDraft.trim() || chatSending) return;
+    setChatSending(true); setError("");
+    try {
+      const {data,error:invokeError}=await supabase.functions.invoke("admin-dashboard",{body:{action:"chat-send",conversation_id:selectedChat.id,message:chatDraft.trim()}});
+      if(invokeError) throw new Error(data?.error||invokeError.message||"Não foi possível enviar a resposta.");
+      if(data?.error) throw new Error(data.error);
+      setChatDraft("");
+      await load("chat-messages",{conversation_id:selectedChat.id});
+      await load("chat-list");
+    } catch(e) { setError(e.message||"Não foi possível enviar a resposta."); }
+    finally { setChatSending(false); }
   }
   const term = filter.trim().toLowerCase();
   const filteredEquipment = equipment.filter(item => [item.name,item.brand,item.model,item.category,item.serial_number,item.imei,item.status,item.restriction_status,item.owner_name,item.owner_phone].some(v => String(v || "").toLowerCase().includes(term)));
@@ -49,7 +70,8 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       <nav className="dashboard-tabs admin-nav" aria-label="Secções administrativas">
         <button className={"dashboard-tab " + (section === "equipment" ? "active" : "")} onClick={() => { setSection("equipment"); setFilter(""); load("equipment"); }}>Equipamentos</button>
         <button className={"dashboard-tab " + (section === "history" ? "active" : "")} onClick={() => { setSection("history"); setFilter(""); load("history"); }}>Histórico de pesquisas</button>
-        <button className={"dashboard-tab " + (section === "support" ? "active" : "")} onClick={() => { setSection("support"); setFilter(""); load("support"); }}>Suporte</button>
+        <button className={"dashboard-tab " + (section === "support" ? "active" : "")} onClick={() => { setSection("support"); setFilter(""); load("support"); }}>Ajuda por formulário</button>
+        <button className={"dashboard-tab " + (section === "chat" ? "active" : "")} onClick={() => { setSection("chat"); setFilter(""); load("chat-list"); }}>Chat com clientes</button>
         {role === "super_admin" && <button className="dashboard-tab" onClick={onManageAccess}>Gestão de acessos</button>}
       </nav>
       {error && <p className="dashboard-notice admin-error" role="alert">{error}</p>}
@@ -69,6 +91,24 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
           <div className="table-actions"><button className="primary-button" disabled={loading} onClick={()=>saveSupportMessage(item,"answered")}>Guardar como respondida</button><button className="outline-button" disabled={loading} onClick={()=>saveSupportMessage(item,"in_progress")}>Em análise</button><button className="outline-button" disabled={loading} onClick={()=>saveSupportMessage(item,"closed")}>Fechar pedido</button></div>
         </article>)}</div> : <div className="empty-state">Ainda não foram recebidas mensagens de suporte.</div>}
         <p className="field-help admin-history-note">As respostas ficam registadas nesta caixa. Nesta versão, o sistema não envia emails automaticamente; para responder por email, utilize o endereço do remetente e registe aqui o estado do pedido.</p>
+      </section>}
+      {section === "chat" && <section className="equipment-list-card admin-data-card admin-chat-card">
+        <div className="list-heading"><div><h2>Chat de suporte</h2><p>{chatConversations.length} conversas de clientes · As mensagens são atualizadas ao abrir cada conversa.</p></div><button className="outline-button" onClick={()=>load("chat-list")} disabled={loading}>Atualizar</button></div>
+        <div className="admin-chat-layout">
+          <aside className="admin-chat-conversations" aria-label="Conversas de suporte">
+            {chatConversations.length ? chatConversations.map(item=><button type="button" key={item.id} className={"admin-chat-conversation "+(selectedChat?.id===item.id?"selected":"")} onClick={()=>load("chat-messages",{conversation_id:item.id})}>
+              <span className="admin-chat-user-avatar"> {item.user_name?.[0]?.toUpperCase()||"U"} </span><span className="admin-chat-conversation-copy"><strong>{item.user_name}</strong><small>{item.last_message?.message||"Ainda sem mensagens"}</small><small>{item.last_message?.created_at?new Date(item.last_message.created_at).toLocaleString("pt-PT"):"Conversa criada"}</small></span><span className={"admin-chat-status "+(item.status==="closed"?"closed":"open")}>{item.status==="waiting_admin"?"Nova":item.status==="waiting_user"?"Respondida":item.status==="closed"?"Fechada":"Aberta"}</span>
+            </button>) : <div className="empty-state">Ainda não existem conversas de suporte.</div>}
+          </aside>
+          <div className="admin-chat-thread">
+            {!selectedChat ? <div className="empty-state">Selecione uma conversa para ler e responder às mensagens.</div> : <>
+              <div className="admin-chat-thread-heading"><div><h3>{selectedChat.user_name||"Utilizador PROTEGE"}</h3><p>Conversa privada · Criada em {new Date(selectedChat.created_at).toLocaleDateString("pt-PT")}</p></div><span className={"admin-chat-status "+(selectedChat.status==="closed"?"closed":"open")}>{selectedChat.status==="waiting_admin"?"A aguardar resposta":selectedChat.status==="waiting_user"?"A aguardar cliente":selectedChat.status==="closed"?"Fechada":"Aberta"}</span></div>
+              <div className="admin-chat-thread-messages">{chatMessages.length ? chatMessages.map(item=><article key={item.id} className={"support-chat-message "+(item.sender_role==="admin"?"mine":"theirs")}><span className="support-chat-sender">{item.sender_role==="admin"?"Equipa PROTEGE":selectedChat.user_name||"Cliente"}</span><p>{item.message}</p><time>{new Date(item.created_at).toLocaleString("pt-PT",{dateStyle:"short",timeStyle:"short"})}</time></article>) : <div className="empty-state">Esta conversa ainda não tem mensagens.</div>}</div>
+              <form className="support-chat-composer admin-chat-composer" onSubmit={sendChatReply}><textarea value={chatDraft} onChange={e=>setChatDraft(e.target.value)} rows={2} maxLength={5000} placeholder="Escreva a resposta ao cliente..." aria-label="Resposta ao cliente"/><button className="primary-button" type="submit" disabled={chatSending||!chatDraft.trim()}>{chatSending?"A enviar...":"Responder"} <span aria-hidden="true">➤</span></button></form>
+            </>}
+          </div>
+        </div>
+        <p className="field-help admin-history-note">As respostas enviadas aqui aparecem diretamente na área Suporte do cliente, sem emails nem formulários adicionais.</p>
       </section>}
       {section === "history" && <section className="equipment-list-card admin-data-card">
         <div className="list-heading"><div><h2>Pesquisas registadas</h2><p>{history.length} consultas. Pesquisas sem sessão aparecem como visitante sem sessão.</p></div><div className="admin-filter-actions"><input className="search-input" aria-label="Pesquisar histórico" placeholder="Pesquisar SN, IMEI, utilizador ou proprietário" value={filter} onChange={e=>setFilter(e.target.value)}/><button className="outline-button" onClick={()=>load("history")} disabled={loading}>Atualizar</button></div></div>
