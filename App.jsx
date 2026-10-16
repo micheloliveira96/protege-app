@@ -849,7 +849,7 @@ export default function App() {
 
   if (supportPage && landingMode && screen === "login") {
     return <main className="protege-landing help-page support-page">
-      <header className="landing-header"><a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setSupportPage(false);}}><span className="landing-brand-shield">⬡</span><span>PROTEGE</span></a><div className="landing-actions"><button className="landing-login-button" onClick={()=>setSupportPage(false)}>Voltar ao início</button></div></header>
+      <header className="landing-header"><a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setSupportPage(false);}}><span className="landing-brand-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span><span>PROTEGE</span></a><div className="landing-actions"><button className="landing-login-button" onClick={()=>setSupportPage(false)}>Voltar ao início</button></div></header>
       <section className="help-hero"><p className="landing-kicker">APOIO AO UTILIZADOR</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um email válido para eventual contacto.</span></div></section>
       <section className="support-form-wrap">
         {supportError&&<p className="dashboard-notice admin-error" role="alert">{supportError}</p>}{supportNotice&&<p className="dashboard-notice" role="status">{supportNotice}</p>}
@@ -924,7 +924,7 @@ export default function App() {
         <section className="landing-hero" id="inicio">
           <div className="landing-art" aria-hidden="true"><img src="/protege-tech-visual.svg" alt="" fetchPriority="high"/></div>
           <div className="landing-copy">
-            <div className="landing-kicker"><span className="landing-mini-shield">⬡</span> SEGURANÇA PARA O SEU DIA A DIA</div>
+            <div className="landing-kicker"><span className="landing-mini-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span> SEGURANÇA PARA O SEU DIA A DIA</div>
             <h1>PROTEGE</h1>
             <h2>Registe os seus equipamentos<br/>e <span>aumente a sua segurança.</span></h2>
             <p className="landing-description">Uma plataforma em Portugal para registo e consulta de equipamentos eletrónicos, ajudando no combate ao furto e roubo.</p>
