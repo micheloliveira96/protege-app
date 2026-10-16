@@ -232,6 +232,10 @@ export default function App() {
   const [showAccount, setShowAccount] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
+  const [currentUserPassword, setCurrentUserPassword] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [confirmUserPassword, setConfirmUserPassword] = useState("");
+  const [showUserPasswords, setShowUserPasswords] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const [removeProfilePhoto, setRemoveProfilePhoto] = useState(false);
@@ -324,9 +328,20 @@ export default function App() {
       setProfileNotice("Preencha os campos obrigatórios: nome, sobrenome, telemóvel e país.");
       return;
     }
+    const changingPassword = Boolean(currentUserPassword || newUserPassword || confirmUserPassword);
+    if (changingPassword) {
+      if (!currentUserPassword) { setProfileNotice("Introduza a palavra-passe antiga para a poder alterar."); return; }
+      if (newUserPassword.length < 12) { setProfileNotice("A nova palavra-passe deve ter pelo menos 12 caracteres."); return; }
+      if (newUserPassword !== confirmUserPassword) { setProfileNotice("A confirmação da nova palavra-passe não coincide."); return; }
+      if (newUserPassword === currentUserPassword) { setProfileNotice("A nova palavra-passe deve ser diferente da antiga."); return; }
+    }
     setProfileSaving(true);
     setProfileNotice("");
     try {
+      if (changingPassword) {
+        const { error: verifyPasswordError } = await supabase.auth.signInWithPassword({ email: session.user.email, password: currentUserPassword });
+        if (verifyPasswordError) throw new Error("A palavra-passe antiga está incorreta.");
+      }
       const oldProfilePhotoPath = profile?.profile_photo_path || null;
       let photoPath = removeProfilePhoto ? null : oldProfilePhotoPath;
       if (profilePhoto) {
@@ -351,6 +366,11 @@ export default function App() {
       };
       const { error } = await supabase.from("user_profiles").upsert(payload, { onConflict: "user_id" });
       if (error) throw error;
+      if (changingPassword) {
+        const { error: passwordUpdateError } = await supabase.auth.updateUser({ password: newUserPassword });
+        if (passwordUpdateError) throw passwordUpdateError;
+        setCurrentUserPassword(""); setNewUserPassword(""); setConfirmUserPassword(""); setShowUserPasswords(false);
+      }
       if (oldProfilePhotoPath && oldProfilePhotoPath !== photoPath) {
         await supabase.storage.from("profile-photos").remove([oldProfilePhotoPath]);
       }
@@ -657,7 +677,16 @@ export default function App() {
                 <div><label htmlFor="profile-birth">Data de nascimento (opcional)</label><input id="profile-birth" type="date" value={profileForm.date_of_birth} onChange={e => setProfileForm({...profileForm, date_of_birth:e.target.value})} max={new Date().toISOString().slice(0,10)}/></div>
                 <div><label htmlFor="profile-city">Cidade (opcional)</label><input id="profile-city" value={profileForm.city} onChange={e => setProfileForm({...profileForm, city:e.target.value})} autoComplete="address-level2" maxLength={100}/></div>
               </div>
-              <div className="form-actions"><button className="primary-button" type="submit" disabled={profileSaving}>{profileSaving ? "A guardar..." : "Guardar dados da conta"}</button></div>
+              <section className="password-section user-password-section">
+                <h3>Alterar palavra-passe</h3>
+                <p className="field-help">Preencha os três campos para alterar a palavra-passe. A nova palavra-passe deve ter pelo menos 12 caracteres.</p>
+                <div className="field-grid">
+                  <div className="password-field"><label htmlFor="user-current-password">Palavra-passe antiga</label><div className="password-input-wrap"><input id="user-current-password" type={showUserPasswords ? "text" : "password"} autoComplete="current-password" value={currentUserPassword} onChange={e=>setCurrentUserPassword(e.target.value)} placeholder="Palavra-passe atual"/><button type="button" className="password-visibility" onClick={()=>setShowUserPasswords(v=>!v)} aria-label={showUserPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showUserPasswords ? <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.1 3.9"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.2 0 2.3-.2 3.3-.6"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>}</button></div></div>
+                  <div className="password-field"><label htmlFor="user-new-password">Nova palavra-passe</label><div className="password-input-wrap"><input id="user-new-password" type={showUserPasswords ? "text" : "password"} autoComplete="new-password" value={newUserPassword} onChange={e=>setNewUserPassword(e.target.value)} placeholder="Mínimo de 12 caracteres" minLength={12}/><button type="button" className="password-visibility" onClick={()=>setShowUserPasswords(v=>!v)} aria-label={showUserPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showUserPasswords ? <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.1 3.9"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.2 0 2.3-.2 3.3-.6"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>}</button></div></div>
+                  <div className="password-field"><label htmlFor="user-confirm-password">Confirmar nova palavra-passe</label><div className="password-input-wrap"><input id="user-confirm-password" type={showUserPasswords ? "text" : "password"} autoComplete="new-password" value={confirmUserPassword} onChange={e=>setConfirmUserPassword(e.target.value)} placeholder="Repita a nova palavra-passe" minLength={12}/><button type="button" className="password-visibility" onClick={()=>setShowUserPasswords(v=>!v)} aria-label={showUserPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showUserPasswords ? <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.1 3.9"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.2 0 2.3-.2 3.3-.6"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>}</button></div></div>
+                </div>
+              </section>
+              <div className="form-actions"><button className="primary-button" type="submit" disabled={profileSaving}>{profileSaving ? "A guardar..." : "Guardar dados e palavra-passe"}</button></div>
             </form>}
           </section></div>}
           <div className="dashboard-welcome">
