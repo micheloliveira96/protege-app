@@ -70,12 +70,12 @@ export default function SupportChat({ supabase, user }) {
     if ((!message && !attachment) || !conversation || sending) return;
     if (message.length > 5000) { setError("A mensagem não pode ultrapassar 5.000 caracteres."); return; }
     if (attachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(attachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }
-    if (attachment && attachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
+    if (attachment && attachment.size > 25 * 1024 * 1024) { setError("O arquivo deve ter no máximo 25 MB."); return; }
     setSending(true); setError("");
     let attachmentPath = null;
     try {
       if (attachment) {
-        const safeName = attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
+        const safeName = attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "arquivo";
         attachmentPath = user.id + "/" + conversation.id + "/" + crypto.randomUUID() + "-" + safeName;
         const uploaded = await supabase.storage.from("support-chat-files").upload(attachmentPath, attachment, { contentType: attachment.type, upsert: false });
         if (uploaded.error) throw uploaded.error;
@@ -106,13 +106,13 @@ export default function SupportChat({ supabase, user }) {
     <div className="support-chat-messages" aria-live="polite">
       {loading ? <div className="empty-state">A abrir a conversa...</div> : messages.length === 0 ? <div className="support-chat-empty"><span>✦</span><h3>Como podemos ajudar?</h3><p>Escreva a sua dúvida abaixo. A equipa PROTEGE responderá nesta conversa.</p></div> : messages.map(item => <article key={item.id} className={"support-chat-message " + (item.sender_role === "user" ? "mine" : "theirs")}>
         {item.sender_role !== "user" && <span className="support-chat-sender">Equipa PROTEGE</span>}
-        {item.message && <p>{item.message}</p>}{item.attachment_url && <a className="chat-attachment-link" href={item.attachment_url} target="_blank" rel="noreferrer">{item.attachment_type?.startsWith("image/") ? <img className="chat-attachment-image" src={item.attachment_url} alt={item.attachment_name || "Imagem anexada"}/> : item.attachment_type?.startsWith("video/") ? <video className="chat-attachment-video" src={item.attachment_url} controls preload="metadata"/> : <span className="chat-attachment-file">📎 {item.attachment_name || "Abrir ficheiro"}</span>}</a>}{item.attachment_path && !item.attachment_url && <span className="chat-attachment-file">📎 {item.attachment_name || "Anexo"}</span>}<time>{new Date(item.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}</time>
+        {item.message && <p>{item.message}</p>}{item.attachment_url && <a className="chat-attachment-link" href={item.attachment_url} target="_blank" rel="noreferrer">{item.attachment_type?.startsWith("image/") ? <img className="chat-attachment-image" src={item.attachment_url} alt={item.attachment_name || "Imagem anexada"}/> : item.attachment_type?.startsWith("video/") ? <video className="chat-attachment-video" src={item.attachment_url} controls preload="metadata"/> : <span className="chat-attachment-file">📎 {item.attachment_name || "Abrir arquivo"}</span>}</a>}{item.attachment_path && !item.attachment_url && <span className="chat-attachment-file">📎 {item.attachment_name || "Anexo"}</span>}<time>{new Date(item.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}</time>
       </article>)}
     </div>
     <form className="support-chat-composer" onSubmit={sendMessage}>
-      <div className="support-chat-inputs"><textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Escreva a sua mensagem..." rows={2} maxLength={5000} aria-label="Mensagem para o suporte" disabled={!conversation || sending}/><div className="support-chat-file-row"><label className="chat-file-button" htmlFor="customer-chat-file">＋ Anexar ficheiro</label><input id="customer-chat-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf" onChange={e => setAttachment(e.target.files?.[0] || null)} disabled={sending} hidden/><span className="field-help">Imagem, vídeo ou PDF · Máx. 25 MB</span>{attachment && <span className="chat-file-selected">{attachment.name} <button type="button" onClick={() => {setAttachment(null); const el=document.getElementById("customer-chat-file"); if(el) el.value="";}}>×</button></span>}</div></div>
+      <div className="support-chat-inputs"><textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Escreva a sua mensagem..." rows={2} maxLength={5000} aria-label="Mensagem para o suporte" disabled={!conversation || sending}/><div className="support-chat-file-row"><label className="chat-file-button" htmlFor="customer-chat-file">＋ Anexar arquivo</label><input id="customer-chat-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf" onChange={e => setAttachment(e.target.files?.[0] || null)} disabled={sending} hidden/><span className="field-help">Imagem, vídeo ou PDF · Máx. 25 MB</span>{attachment && <span className="chat-file-selected">{attachment.name} <button type="button" onClick={() => {setAttachment(null); const el=document.getElementById("customer-chat-file"); if(el) el.value="";}}>×</button></span>}</div></div>
       <button className="primary-button" type="submit" disabled={!conversation || (!draft.trim() && !attachment) || sending}>{sending ? "A enviar..." : "Enviar"} <span aria-hidden="true">➤</span></button>
     </form>
-    <p className="field-help support-chat-footnote">Não precisa de indicar nome ou email. A PROTEGE identifica a sua conta automaticamente.</p>
+    <p className="field-help support-chat-footnote">Não precisa de indicar nome ou e-mail. A PROTEGE identifica a sua conta automaticamente.</p>
   </section>;
 }
