@@ -95,6 +95,7 @@ export default function App() {
     if (error) {
       setProfileNotice("Não foi possível carregar os dados da conta: " + error.message);
       setProfile(null);
+      setShowAccount(true);
     } else {
       setProfile(data || null);
       setProfileForm({
