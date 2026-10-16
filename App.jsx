@@ -457,6 +457,28 @@ export default function App() {
     }
   }
 
+  async function signInWithGoogle() {
+    if (!supabase) {
+      setNotice("A ligação ao Supabase não está configurada.");
+      return;
+    }
+    setNotice("");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: { access_type: "offline", prompt: "select_account" }
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      setNotice(error?.message || "Não foi possível iniciar sessão com Google.");
+      setLoading(false);
+    }
+  }
+
   function changeScreen(next) {
     setLandingMode(false);
     setScreen(next);
@@ -962,6 +984,8 @@ export default function App() {
           <button className="primary-button" type="submit" disabled={loading}>{loading ? "Aguarde..." : screen === "login" ? "Entrar" : screen === "register" ? "Criar conta" : "Enviar instruções"}</button>
           {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
         </form>
+        {screen === "login" && <div className="oauth-divider"><span>ou</span></div>}
+        {screen === "login" && <button className="google-signin-button" type="button" onClick={signInWithGoogle} disabled={loading}><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.02 13.22l7.98 6.19C12.9 13.72 18.02 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.42 38.06 46.98 31.9 46.98 24.55Z"/><path fill="#FBBC05" d="M10.99 28.59A14.4 14.4 0 0 1 10.2 24c0-1.59.28-3.13.78-4.59L3 13.22A23.9 23.9 0 0 0 0 24c0 3.86.92 7.51 2.54 10.78l8.45-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.18 2.3-5.98 0-11.1-4.22-12.99-9.91L3.02 34.78C6.51 42.62 14.62 48 24 48Z"/></svg>Continuar com Google</button>}
         <div className="switch-screen">
           {screen === "login" ? <>Ainda não tem conta? <button className="text-button" type="button" onClick={() => changeScreen("register")} disabled={loading}>Criar conta</button></> :
            screen === "register" ? <>Já tem conta? <button className="text-button" type="button" onClick={() => changeScreen("login")} disabled={loading}>Entrar</button></> :
