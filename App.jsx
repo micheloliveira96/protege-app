@@ -53,8 +53,6 @@ export default function App() {
   const [editingId, setEditingId] = useState(null);
   const [equipmentForm, setEquipmentForm] = useState(emptyEquipment);
   const [dashboardNotice, setDashboardNotice] = useState("");
-  const [activeTab, setActiveTab] = useState("mine");
-  const [isAdmin, setIsAdmin] = useState(false);
   const [lookupSerial, setLookupSerial] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState(null);
@@ -71,18 +69,10 @@ export default function App() {
   useEffect(() => {
     if (session?.user) {
       loadEquipment();
-      checkAdmin();
     } else {
       setEquipment([]);
-      setIsAdmin(false);
     }
   }, [session?.user?.id]);
-
-  async function checkAdmin() {
-    if (!supabase || !session?.user) return;
-    const { data, error } = await supabase.from("admin_users").select("user_id").eq("user_id", session.user.id).maybeSingle();
-    setIsAdmin(!error && !!data);
-  }
 
   async function loadEquipment() {
     if (!supabase) return;
@@ -251,15 +241,6 @@ export default function App() {
     }
   }
 
-  async function updateRestriction(item, value) {
-    const { error } = await supabase.from("equipments").update({ restriction_status: value }).eq("id", item.id);
-    if (error) setDashboardNotice("Não foi possível atualizar a restrição: " + error.message);
-    else {
-      setEquipment(current => current.map(entry => entry.id === item.id ? { ...entry, restriction_status: value } : entry));
-      setDashboardNotice("Estado de restrição atualizado.");
-    }
-  }
-
   async function lookupEquipment(event) {
     event.preventDefault();
     setLookupLoading(true);
@@ -308,13 +289,12 @@ export default function App() {
         </header>
         <section className="dashboard-content">
           <div className="dashboard-welcome">
-            <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : activeTab === "lookup" ? "Consultar equipamento" : "Painel de administração"}</h1><p className="muted-copy">Organize os seus bens e consulte o estado de proteção dos equipamentos.</p></div>
+            <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : "Consultar equipamento"}</h1><p className="muted-copy">Organize os seus bens e consulte o estado de proteção dos equipamentos.</p></div>
             {activeTab === "mine" && <button className="primary-button add-button" onClick={startNewEquipment}>＋ Registar equipamento</button>}
           </div>
           <nav className="dashboard-tabs" aria-label="Secções da PROTEGE">
             <button className={"dashboard-tab " + (activeTab === "mine" ? "active" : "")} onClick={() => setActiveTab("mine")}>Os meus equipamentos</button>
             <button className={"dashboard-tab " + (activeTab === "lookup" ? "active" : "")} onClick={() => setActiveTab("lookup")}>Consultar equipamento</button>
-            {isAdmin && <button className={"dashboard-tab " + (activeTab === "admin" ? "active" : "")} onClick={() => setActiveTab("admin")}>Painel de administração</button>}
           </nav>
           {dashboardNotice && <p className="dashboard-notice" role="status">{dashboardNotice}</p>}
 
@@ -358,17 +338,16 @@ export default function App() {
               <div className="form-card-heading"><div><h2>Consultar pelo número de série</h2><p>Introduza o número de série para verificar se existe um registo na PROTEGE e se tem alguma restrição.</p></div></div>
               <div className="lookup-input-row"><input aria-label="Número de série para consulta" value={lookupSerial} onChange={e => setLookupSerial(e.target.value)} placeholder="Número de série" minLength={3} maxLength={160} required/><button className="primary-button" type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button></div>
             </form>
-            {lookupResult && <div className={"lookup-result-card " + (lookupResult.error ? "lookup-not-found" : !lookupResult.found ? "lookup-not-found" : lookupResult.restriction_status === "Com restrição" ? "restriction-red" : "restriction-green")}>
-              {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> :
-                !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> :
-                <><span className="lookup-status">{lookupResult.restriction_status || "Estado não indicado"}</span><strong>{lookupResult.name}</strong><p>{lookupResult.restriction_status === "Com restrição" ? "Atenção: este equipamento tem uma restrição registada na PROTEGE." : "Não existe uma restrição assinalada neste registo."}</p></>}
-            </div>}
+            {lookupResult && (() => {
+              const restricted = lookupResult.found && (lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição");
+              return <div className={"lookup-result-card " + (lookupResult.error ? "lookup-not-found" : !lookupResult.found ? "lookup-not-found" : restricted ? "restriction-red" : "restriction-green")}>
+                {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> :
+                  !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> :
+                  <><span className="lookup-status">{restricted ? "COM RESTRIÇÃO" : "SEM RESTRIÇÃO"}</span><strong>{lookupResult.name}</strong><p>{restricted ? (lookupResult.status === "Roubado" ? "ATENÇÃO: este equipamento está registado como roubado." : "ATENÇÃO: este equipamento tem uma restrição registada na PROTEGE.") : "Não existe uma restrição assinalada neste registo."}</p></>}
+              </div>;
+            })()}
           </section>}
 
-          {activeTab === "admin" && isAdmin && <section className="equipment-list-card">
-            <div className="list-heading"><div><h2>Todos os equipamentos</h2><p>Área restrita a administradores autorizados. Altere apenas estados confirmados.</p></div><input className="search-input" aria-label="Pesquisar todos os equipamentos" placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-            <div className="equipment-table-wrap"><table className="equipment-table"><thead><tr><th>Equipamento</th><th>N.º de série</th><th>Estado</th><th>Restrição</th><th>Proprietário</th></tr></thead><tbody>{filteredEquipment.map(item => <tr key={item.id}><td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ")}</span></td><td>{item.serial_number || "—"}</td><td>{item.status}</td><td><select aria-label={"Restrição de " + item.name} value={item.restriction_status || "Sem restrição"} onChange={e => updateRestriction(item, e.target.value)}><option>Sem restrição</option><option>Com restrição</option></select></td><td>{item.user_id === session.user.id ? "A sua conta" : (item.user_id || "—").slice(0, 8)}</td></tr>)}</tbody></table></div>
-          </section>}
           <p className="privacy-note">Os seus equipamentos e fotografias são protegidos por regras de acesso.</p>
         </section>
         <footer>PROTEGE · Registo e proteção de equipamentos</footer>
