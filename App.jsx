@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabaseClient.js";
 import AdminDashboard from "./AdminDashboard.jsx";
+import SupportChat from "./SupportChat.jsx";
 
 const emptyEquipment = {
   name: "", category: "Eletrónica", brand: "", model: "",
@@ -747,12 +748,13 @@ export default function App() {
             </form>}
           </section></div>}
           <div className="dashboard-welcome">
-            <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : "Consultar equipamento"}</h1><p className="muted-copy">Organize os seus bens e consulte o estado de proteção dos equipamentos.</p></div>
+            <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : activeTab === "lookup" ? "Consultar equipamento" : "Suporte direto"}</h1><p className="muted-copy">{activeTab === "support" ? "Converse diretamente com a equipa PROTEGE, sem preencher formulários." : "Organize os seus bens e consulte o estado de proteção dos equipamentos."}</p></div>
             {activeTab === "mine" && <button className="primary-button add-button" onClick={startNewEquipment}>＋ Registar equipamento</button>}
           </div>
           <nav className="dashboard-tabs" aria-label="Secções da PROTEGE">
             <button className={"dashboard-tab " + (activeTab === "mine" ? "active" : "")} onClick={() => setActiveTab("mine")}>Os meus equipamentos</button>
             <button className={"dashboard-tab " + (activeTab === "lookup" ? "active" : "")} onClick={() => setActiveTab("lookup")}>Consultar equipamento</button>
+            <button className={"dashboard-tab " + (activeTab === "support" ? "active" : "")} onClick={() => setActiveTab("support")}>Suporte</button>
           </nav>
           {dashboardNotice && <p className="dashboard-notice" role="status">{dashboardNotice}</p>}
 
@@ -792,6 +794,8 @@ export default function App() {
                 <div className="equipment-table-wrap"><table className="equipment-table"><thead><tr><th>Equipamento</th><th>Categoria</th><th>SN / IMEI</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{filteredEquipment.map(item => <tr key={item.id}><td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ") || "Sem marca/modelo"}</span></td><td>{item.category}</td><td><span className="table-subtitle">SN: {item.serial_number || "—"}</span><span className="table-subtitle">IMEI: {item.imei || "—"}</span></td><td><span className={"status-pill status-" + item.status.toLowerCase()}>{item.status}</span></td><td><div className="table-actions"><button className="text-button" onClick={() => startEdit(item)}>Editar</button><button className="delete-button" onClick={() => deleteEquipment(item)}>Eliminar</button></div></td></tr>)}</tbody></table></div>}
             </section>
           </>}
+
+          {activeTab === "support" && <SupportChat supabase={supabase} user={session.user} />}
 
           {activeTab === "lookup" && <section className="equipment-list-card">
             <form className="lookup-form" onSubmit={lookupEquipment}>
