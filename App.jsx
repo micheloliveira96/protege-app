@@ -59,6 +59,14 @@ export default function App() {
   const [lookupResult, setLookupResult] = useState(null);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [showAccount, setShowAccount] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileNotice, setProfileNotice] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
+  const [profileForm, setProfileForm] = useState({ first_name: "", last_name: "", date_of_birth: "", country: "", city: "", phone: "" });
 
   useEffect(() => {
     if (!supabase) return;
@@ -70,10 +78,94 @@ export default function App() {
   useEffect(() => {
     if (session?.user) {
       loadEquipment();
+      loadProfile();
     } else {
       setEquipment([]);
+      setProfile(null);
+      setProfileLoading(false);
+      setShowAccount(false);
     }
   }, [session?.user?.id]);
+
+  async function loadProfile() {
+    if (!supabase || !session?.user) return;
+    setProfileLoading(true);
+    setProfileNotice("");
+    const { data, error } = await supabase.from("user_profiles").select("*").eq("user_id", session.user.id).maybeSingle();
+    if (error) {
+      setProfileNotice("Não foi possível carregar os dados da conta: " + error.message);
+      setProfile(null);
+    } else {
+      setProfile(data || null);
+      setProfileForm({
+        first_name: data?.first_name || "",
+        last_name: data?.last_name || "",
+        date_of_birth: data?.date_of_birth || "",
+        country: data?.country || "",
+        city: data?.city || "",
+        phone: data?.phone || ""
+      });
+      if (data?.profile_photo_path) {
+        const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(data.profile_photo_path, 3600);
+        setProfilePhotoUrl(signed?.signedUrl || "");
+      } else {
+        setProfilePhotoUrl("");
+      }
+      if (!data || !data.first_name?.trim() || !data.last_name?.trim() || !data.phone?.trim() || !data.country?.trim()) {
+        setShowAccount(true);
+      }
+    }
+    setProfileLoading(false);
+  }
+
+  async function saveProfile(event) {
+    event.preventDefault();
+    if (!supabase || !session?.user) return;
+    const firstName = profileForm.first_name.trim();
+    const lastName = profileForm.last_name.trim();
+    const phone = profileForm.phone.trim();
+    const country = profileForm.country.trim();
+    if (!firstName || !lastName || !phone || !country) {
+      setProfileNotice("Preencha os campos obrigatórios: nome, sobrenome, telemóvel e país.");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileNotice("");
+    try {
+      let photoPath = profile?.profile_photo_path || null;
+      if (profilePhoto) {
+        if (!profilePhoto.type.startsWith("image/")) throw new Error("Selecione um ficheiro de imagem válido.");
+        const blob = await compressPhoto(profilePhoto);
+        if (blob.size > 2 * 1024 * 1024) throw new Error("A fotografia de perfil deve ter no máximo 2 MB.");
+        const newPath = session.user.id + "/" + crypto.randomUUID() + ".jpg";
+        const { error: uploadError } = await supabase.storage.from("profile-photos").upload(newPath, blob, { contentType: "image/jpeg", upsert: false });
+        if (uploadError) throw uploadError;
+        photoPath = newPath;
+      }
+      const payload = {
+        user_id: session.user.id,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        country,
+        date_of_birth: profileForm.date_of_birth || null,
+        city: profileForm.city.trim() || null,
+        profile_photo_path: photoPath,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await supabase.from("user_profiles").upsert(payload, { onConflict: "user_id" });
+      if (error) throw error;
+      setProfilePhoto(null);
+      await loadProfile();
+      setShowAccount(false);
+      setProfileNotice("");
+      setDashboardNotice("Dados da conta guardados com sucesso.");
+    } catch (error) {
+      setProfileNotice("Não foi possível guardar os dados: " + (error?.message || "erro desconhecido"));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
 
   async function loadEquipment() {
     if (!supabase) return;
@@ -286,9 +378,33 @@ export default function App() {
             <div className="brand-mark small-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div>
             <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Registo e proteção de equipamentos</div></div>
           </div>
-          <div className="user-actions"><span className="user-email">{session.user.email}</span><button className="outline-button" onClick={signOut}>Terminar sessão</button></div>
+          <div className="user-actions">
+            {profilePhotoUrl ? <img className="profile-avatar" src={profilePhotoUrl} alt="Fotografia de perfil"/> : <span className="profile-avatar profile-avatar-empty" aria-hidden="true">{profile?.first_name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}</span>}
+            <span className="user-email">{profile?.first_name ? profile.first_name + " " + (profile.last_name || "") : session.user.email}</span>
+            <button className="outline-button" onClick={() => { setProfileNotice(""); setProfilePhoto(null); setShowAccount(true); }}>Sua conta</button>
+            <button className="outline-button" onClick={signOut}>Terminar sessão</button>
+          </div>
         </header>
         <section className="dashboard-content">
+          {showAccount && <section className="equipment-form-card account-card">
+            <div className="form-card-heading"><div><h2>{profile ? "Sua conta" : "Complete os seus dados"}</h2><p>{profile ? "Pode atualizar estes dados sempre que precisar." : "Antes de continuar, complete os dados obrigatórios do seu perfil."}</p></div>{profile && <button className="close-button" type="button" onClick={() => { setShowAccount(false); setProfileNotice(""); }} aria-label="Fechar">×</button>}</div>
+            {profileLoading ? <p className="muted-copy">A carregar os dados da conta...</p> : <form className="equipment-form" onSubmit={saveProfile}>
+              {profileNotice && <p className="dashboard-notice" role="status">{profileNotice}</p>}
+              <div className="profile-photo-editor">
+                {profilePhoto ? <img className="profile-photo-large" src={URL.createObjectURL(profilePhoto)} alt="Pré-visualização da fotografia de perfil"/> : profilePhotoUrl ? <img className="profile-photo-large" src={profilePhotoUrl} alt="Fotografia de perfil atual"/> : <div className="profile-photo-large profile-avatar-empty">{profileForm.first_name?.[0]?.toUpperCase() || "U"}</div>}
+                <div className="profile-photo-fields"><label htmlFor="profile-photo">Fotografia de perfil (opcional)</label><input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setProfilePhoto(e.target.files?.[0] || null)}/><p className="field-help">JPG, PNG ou WebP. Máximo 2 MB após compressão.</p></div>
+              </div>
+              <div className="field-grid">
+                <div><label htmlFor="profile-first-name">Nome *</label><input id="profile-first-name" value={profileForm.first_name} onChange={e => setProfileForm({...profileForm, first_name:e.target.value})} autoComplete="given-name" maxLength={100} required/></div>
+                <div><label htmlFor="profile-last-name">Sobrenome *</label><input id="profile-last-name" value={profileForm.last_name} onChange={e => setProfileForm({...profileForm, last_name:e.target.value})} autoComplete="family-name" maxLength={100} required/></div>
+                <div><label htmlFor="profile-phone">Telemóvel *</label><input id="profile-phone" type="tel" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone:e.target.value})} autoComplete="tel" placeholder="+351 912 345 678" maxLength={30} required/></div>
+                <div><label htmlFor="profile-country">País *</label><input id="profile-country" value={profileForm.country} onChange={e => setProfileForm({...profileForm, country:e.target.value})} autoComplete="country-name" placeholder="Portugal" maxLength={100} required/></div>
+                <div><label htmlFor="profile-birth">Data de nascimento (opcional)</label><input id="profile-birth" type="date" value={profileForm.date_of_birth} onChange={e => setProfileForm({...profileForm, date_of_birth:e.target.value})} max={new Date().toISOString().slice(0,10)}/></div>
+                <div><label htmlFor="profile-city">Cidade (opcional)</label><input id="profile-city" value={profileForm.city} onChange={e => setProfileForm({...profileForm, city:e.target.value})} autoComplete="address-level2" maxLength={100}/></div>
+              </div>
+              <div className="form-actions"><button className="primary-button" type="submit" disabled={profileSaving}>{profileSaving ? "A guardar..." : "Guardar dados da conta"}</button></div>
+            </form>}
+          </section>}
           <div className="dashboard-welcome">
             <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : "Consultar equipamento"}</h1><p className="muted-copy">Organize os seus bens e consulte o estado de proteção dos equipamentos.</p></div>
             {activeTab === "mine" && <button className="primary-button add-button" onClick={startNewEquipment}>＋ Registar equipamento</button>}
