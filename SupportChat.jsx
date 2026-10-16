@@ -4,6 +4,7 @@ export default function SupportChat({ supabase, user }) {
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -12,10 +13,15 @@ export default function SupportChat({ supabase, user }) {
     if (!quiet) setLoading(true);
     try {
       const { data, error: queryError } = await supabase.from("support_chat_messages")
-        .select("id,conversation_id,sender_id,sender_role,message,created_at")
+        .select("id,conversation_id,sender_id,sender_role,message,attachment_path,attachment_name,attachment_type,attachment_size,created_at")
         .eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(500);
       if (queryError) throw queryError;
-      setMessages(data || []);
+      const enriched = await Promise.all((data || []).map(async item => {
+        if (!item.attachment_path) return item;
+        const { data: signed } = await supabase.storage.from("support-chat-files").createSignedUrl(item.attachment_path, 3600);
+        return { ...item, attachment_url: signed?.signedUrl || null };
+      }));
+      setMessages(enriched);
       setError("");
     } catch {
       if (!quiet) setError("Não foi possível carregar a conversa. Tente atualizar a página.");
@@ -61,8 +67,10 @@ export default function SupportChat({ supabase, user }) {
   async function sendMessage(event) {
     event.preventDefault();
     const message = draft.trim();
-    if (!message || !conversation || sending) return;
+    if ((!message && !attachment) || !conversation || sending) return;
     if (message.length > 5000) { setError("A mensagem não pode ultrapassar 5.000 caracteres."); return; }
+    if (attachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(attachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }
+    if (attachment && attachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setSending(true); setError("");
     try {
       const inserted = await supabase.from("support_chat_messages").insert({
@@ -88,7 +96,7 @@ export default function SupportChat({ supabase, user }) {
     <div className="support-chat-messages" aria-live="polite">
       {loading ? <div className="empty-state">A abrir a conversa...</div> : messages.length === 0 ? <div className="support-chat-empty"><span>✦</span><h3>Como podemos ajudar?</h3><p>Escreva a sua dúvida abaixo. A equipa PROTEGE responderá nesta conversa.</p></div> : messages.map(item => <article key={item.id} className={"support-chat-message " + (item.sender_role === "user" ? "mine" : "theirs")}>
         {item.sender_role !== "user" && <span className="support-chat-sender">Equipa PROTEGE</span>}
-        <p>{item.message}</p><time>{new Date(item.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}</time>
+        {item.message && <p>{item.message}</p>}{item.attachment_url && <a className="chat-attachment-link" href={item.attachment_url} target="_blank" rel="noreferrer">{item.attachment_type?.startsWith("image/") ? <img className="chat-attachment-image" src={item.attachment_url} alt={item.attachment_name || "Imagem anexada"}/> : item.attachment_type?.startsWith("video/") ? <video className="chat-attachment-video" src={item.attachment_url} controls preload="metadata"/> : <span className="chat-attachment-file">📎 {item.attachment_name || "Abrir ficheiro"}</span>}</a>}{item.attachment_path && !item.attachment_url && <span className="chat-attachment-file">📎 {item.attachment_name || "Anexo"}</span>}<time>{new Date(item.created_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}</time>
       </article>)}
     </div>
     <form className="support-chat-composer" onSubmit={sendMessage}>
