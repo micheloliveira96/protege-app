@@ -682,3 +682,12 @@ button, a {
     width: 100%;
   }
 }
+
+
+/* Acesso com Google — coerente com a identidade PROTEGE */
+.oauth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#94a0b1;font-size:12px}
+.oauth-divider::before,.oauth-divider::after{content:"";height:1px;flex:1;background:#e7ebf2}
+.google-signin-button{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;min-height:48px;padding:0 16px;border:1px solid #d8e0ea;border-radius:10px;background:#fff;color:#24364b;font-size:14px;font-weight:650;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s}
+.google-signin-button svg{width:19px;height:19px;flex-shrink:0}
+.google-signin-button:hover{background:#f8fafc;border-color:#b8c6d8;box-shadow:0 3px 10px rgba(16,41,75,.07)}
+.google-signin-button:disabled{opacity:.65;cursor:wait}
