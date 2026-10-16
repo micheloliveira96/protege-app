@@ -201,3 +201,22 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 .admin-reset-form{padding:22px 24px;border:1px solid #e1e8f1;border-radius:12px;background:#fbfcfe}
 .admin-reset-form .form-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .admin-reset-form .form-card-heading p{margin:5px 0 15px;color:#7b8799;font-size:12px}
+
+
+/* Inventário e auditoria na área administrativa */
+.admin-shell .admin-data-card{margin-top:0;margin-bottom:22px}
+.admin-filter-actions{display:flex;align-items:center;gap:8px;min-width:min(520px,100%)}
+.admin-filter-actions .search-input{width:100%;min-width:160px}
+.admin-equipment-table{min-width:1120px}
+.admin-history-table{min-width:1120px}
+.admin-inline-photos{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;max-width:210px}
+.admin-inline-photos a{display:block;width:42px;height:42px;overflow:hidden;border:1px solid #dfe6ef;border-radius:7px;background:#f4f7fb}
+.admin-inline-photos img{display:block;width:100%;height:100%;object-fit:cover}
+.admin-history-note{margin:15px 20px 18px;line-height:1.6}
+.admin-nav{margin-bottom:20px}
+@media(max-width:700px){
+ .admin-filter-actions{width:100%;min-width:0;flex-direction:column;align-items:stretch}
+ .admin-filter-actions .search-input{width:100%;min-width:0}
+ .admin-equipment-table{min-width:1050px}
+ .admin-history-table{min-width:1050px}
+}
