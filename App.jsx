@@ -97,7 +97,7 @@ function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
         if (ownPassword.length < 12) throw new Error("A nova senha deve ter pelo menos 12 caracteres.");
         if (ownPassword !== confirmOwnPassword) throw new Error("A confirmação da nova senha não coincide.");
         if (ownPassword === ownCurrentPassword) throw new Error("A nova senha deve ser diferente da antiga.");
-        const { error: verifyError } = await supabase.auth.signInWithPassword({ e-mail: user.e-mail, password: ownCurrentPassword });
+        const { error: verifyError } = await supabase.auth.signInWithPassword({ email: user.email, password: ownCurrentPassword });
         if (verifyError) throw new Error("A senha antiga está incorreta.");
         const { error: updateError } = await supabase.auth.updateUser({ password: ownPassword });
         if (updateError) throw updateError;
@@ -148,7 +148,7 @@ function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
           <div className="brand-mark small-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div>
           <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
         </div>
-        <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-e-mail">{user.e-mail}</span><button className="outline-button" onClick={onBack}>Voltar ao painel</button><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
+        <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-email">{user.email}</span><button className="outline-button" onClick={onBack}>Voltar ao painel</button><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
       </header>
       <section className="dashboard-content">
         <div className="dashboard-welcome admin-welcome"><div><p className="eyebrow">SUPERADMINISTRAÇÃO</p><h1>Gestão de acessos</h1><p className="muted-copy">Crie e remova contas administrativas e proteja as credenciais de acesso.</p></div></div>
@@ -194,7 +194,7 @@ function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
           </form>}
           {loadingAdmins ? <div className="empty-state">A carregar as contas...</div> : admins.length === 0 ? <div className="empty-state">Não existem contas administrativas.</div> :
             <div className="equipment-table-wrap"><table className="equipment-table admin-table"><thead><tr><th>Usuário</th><th>Tipo de acesso</th><th>Conta de autenticação</th><th>Ações</th></tr></thead><tbody>
-              {admins.map(item=><tr key={item.user_id}><td><strong>{item.username || "Sem nome"}</strong></td><td>{item.role === "super_admin" ? "Superadministrador" : "Administrador"}</td><td>{item.e-mail}</td><td><div className="table-actions">
+              {admins.map(item=><tr key={item.user_id}><td><strong>{item.username || "Sem nome"}</strong></td><td>{item.role === "super_admin" ? "Superadministrador" : "Administrador"}</td><td>{item.email}</td><td><div className="table-actions">
                 {item.role !== "super_admin" && <button className="text-button" disabled={busy} onClick={()=>{setResetAdmin(item);setResetPassword("");setConfirmResetPassword("");setShowResetPasswords(false);setError("");setMessage("");}}>Alterar senha</button>}
                 {item.role !== "super_admin" && <button className="delete-button" disabled={busy} onClick={()=>removeAdmin(item)}>Remover</button>}
                 {item.role !== "super_admin" && <button className="text-button" disabled={busy} onClick={()=>handOverSuperAdmin(item)}>Transferir superadmin</button>}
@@ -213,12 +213,12 @@ export default function App() {
   const [landingMode, setLandingMode] = useState(true);
   const [helpPage, setHelpPage] = useState(false);
   const [supportPage, setSupportPage] = useState(false);
-  const [supportForm, setSupportForm] = useState({name:"",e-mail:"",subject:"",message:""});
+  const [supportForm, setSupportForm] = useState({name:"",email:"",subject:"",message:""});
   const [supportFile, setSupportFile] = useState(null);
   const [supportSending, setSupportSending] = useState(false);
   const [supportNotice, setSupportNotice] = useState("");
   const [supportError, setSupportError] = useState("");
-  const [e-mail, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
@@ -354,7 +354,7 @@ export default function App() {
     setProfileNotice("");
     try {
       if (changingPassword) {
-        const { error: verifyPasswordError } = await supabase.auth.signInWithPassword({ e-mail: session.user.e-mail, password: currentUserPassword });
+        const { error: verifyPasswordError } = await supabase.auth.signInWithPassword({ email: session.user.email, password: currentUserPassword });
         if (verifyPasswordError) throw new Error("A senha antiga está incorreta.");
       }
       const oldProfilePhotoPath = profile?.profile_photo_path || null;
@@ -417,7 +417,7 @@ export default function App() {
   const copy = {
     login: ["Bem-vindo à PROTEGE", "Entre na sua conta para gerir os seus equipamentos."],
     register: ["Criar conta", "cadastre-se para começar a proteger os seus equipamentos."],
-    reset: ["Recuperar senha", "Indique o seu e-mail para recuperar o acesso."]
+    reset: ["Recuperar senha", "Indique o seu email para recuperar o acesso."]
   };
 
   async function submit(event) {
@@ -430,28 +430,28 @@ export default function App() {
     setLoading(true);
     try {
       if (screen === "login") {
-        const loginEmail = isAdminRoute && !e-mail.includes("@") ? e-mail.trim().toLowerCase() + "@admin.protege.local" : e-mail.trim();
-        const { error } = await supabase.auth.signInWithPassword({ e-mail: loginEmail, password });
+        const loginEmail = isAdminRoute && !email.includes("@") ? email.trim().toLowerCase() + "@admin.protege.local" : email.trim();
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
       } else if (screen === "register") {
         const { data, error } = await supabase.auth.signUp({
-          e-mail, password, options: { emailRedirectTo: window.location.origin }
+          email, password, options: { emailRedirectTo: window.location.origin }
         });
         if (error) throw error;
         setPassword("");
         if (data.session) setNotice("Conta criada com sucesso. Já pode começar a cadastrar os seus equipamentos.");
         else {
           setScreen("login");
-          setNotice("Conta criada. Verifique o seu e-mail e clique no link de confirmação antes de entrar.");
+          setNotice("Conta criada. Verifique o seu email e clique no link de confirmação antes de entrar.");
         }
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(e-mail, { redirectTo: window.location.origin });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
         if (error) throw error;
-        setNotice("Se existir uma conta associada a esse e-mail, receberá instruções para recuperar a senha.");
+        setNotice("Se existir uma conta associada a esse email, receberá instruções para recuperar a senha.");
       }
     } catch (error) {
       const message = error?.message || "Ocorreu um erro. Tente novamente.";
-      setNotice(message.toLowerCase().includes("invalid login credentials") ? "e-mail ou senha incorretos." : message);
+      setNotice(message.toLowerCase().includes("invalid login credentials") ? "email ou senha incorretos." : message);
     } finally {
       setLoading(false);
     }
@@ -704,7 +704,7 @@ export default function App() {
           <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
           <div className="form-heading"><h1>Acesso administrativo</h1><p>Entre com as credenciais de uma conta administrativa autorizada.</p></div>
           <form onSubmit={submit} autoComplete="on">
-            <label htmlFor="e-mail">Nome de usuário ou e-mail</label><input id="e-mail" name="username" type="text" autoComplete="username" placeholder="admin" value={e-mail} onChange={e=>setEmail(e.target.value)} required disabled={loading}/>
+            <label htmlFor="email">Nome de usuário ou email</label><input id="email" name="username" type="text" autoComplete="username" placeholder="admin" value={email} onChange={e=>setEmail(e.target.value)} required disabled={loading}/>
             <label htmlFor="password">Senha</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Digite a senha" value={password} onChange={e=>setPassword(e.target.value)} required disabled={loading}/>
             <button className="primary-button" type="submit" disabled={loading}>{loading ? "A verificar..." : "Entrar na administração"}</button>
             {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
@@ -734,8 +734,8 @@ export default function App() {
             <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">cadastro e proteção de equipamentos</div></div>
           </div>
           <div className="user-actions">
-            {profilePhotoUrl ? <img className="profile-avatar" src={profilePhotoUrl} alt="foto de perfil"/> : <span className="profile-avatar profile-avatar-empty" aria-hidden="true">{profile?.first_name?.[0]?.toUpperCase() || session.user.e-mail?.[0]?.toUpperCase() || "U"}</span>}
-            <span className="user-e-mail">{profile?.first_name ? profile.first_name + " " + (profile.last_name || "") : session.user.e-mail}</span>
+            {profilePhotoUrl ? <img className="profile-avatar" src={profilePhotoUrl} alt="foto de perfil"/> : <span className="profile-avatar profile-avatar-empty" aria-hidden="true">{profile?.first_name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}</span>}
+            <span className="user-email">{profile?.first_name ? profile.first_name + " " + (profile.last_name || "") : session.user.email}</span>
             <button className="outline-button" onClick={() => { setProfileNotice(""); setProfilePhoto(null); setShowAccount(true); }}>Sua conta</button>
             <button className="outline-button" onClick={signOut}>Terminar sessão</button>
           </div>
@@ -848,7 +848,7 @@ export default function App() {
     setSupportSending(true);
     let uploadedPath = null;
     try {
-      const name=supportForm.name.trim(), emailValue=supportForm.e-mail.trim(), subject=supportForm.subject.trim(), messageValue=supportForm.message.trim();
+      const name=supportForm.name.trim(), emailValue=supportForm.email.trim(), subject=supportForm.subject.trim(), messageValue=supportForm.message.trim();
       if(name.length<2||emailValue.length<5||subject.length<3||messageValue.length<10) throw new Error("Preencha todos os campos obrigatórios.");
       if(supportFile) {
         if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(supportFile.type)) throw new Error("O anexo deve ser JPG, PNG, WebP ou PDF.");
@@ -857,9 +857,9 @@ export default function App() {
         const uploaded=await supabase.storage.from("support-attachments").upload(uploadedPath,supportFile,{contentType:supportFile.type,upsert:false});
         if(uploaded.error) throw uploaded.error;
       }
-      const result=await supabase.from("support_messages").insert({name,e-mail:emailValue,subject,message:messageValue,attachment_path:uploadedPath,attachment_name:supportFile?.name||null,user_id:session?.user?.id||null,status:"new"});
+      const result=await supabase.from("support_messages").insert({name,email:emailValue,subject,message:messageValue,attachment_path:uploadedPath,attachment_name:supportFile?.name||null,user_id:session?.user?.id||null,status:"new"});
       if(result.error) throw result.error;
-      setSupportForm({name:"",e-mail:"",subject:"",message:""}); setSupportFile(null);
+      setSupportForm({name:"",email:"",subject:"",message:""}); setSupportFile(null);
       const fileInput=document.getElementById("support-attachment"); if(fileInput) fileInput.value="";
       setSupportNotice("Mensagem enviada com sucesso. A equipa PROTEGE irá analisar o pedido.");
     } catch(e) {
@@ -872,16 +872,16 @@ export default function App() {
   if (supportPage && landingMode && screen === "login") {
     return <main className="protege-landing help-page support-page">
       <header className="landing-header"><a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setSupportPage(false);}}><span className="landing-brand-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span><span>PROTEGE</span></a><div className="landing-actions"><button className="landing-login-button" onClick={()=>setSupportPage(false)}>Voltar ao início</button></div></header>
-      <section className="help-hero"><p className="landing-kicker">APOIO AO Usuário</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um e-mail válido para eventual contacto.</span></div></section>
+      <section className="help-hero"><p className="landing-kicker">APOIO AO Usuário</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um email válido para eventual contacto.</span></div></section>
       <section className="support-form-wrap">
         {supportError&&<p className="dashboard-notice admin-error" role="alert">{supportError}</p>}{supportNotice&&<p className="dashboard-notice" role="status">{supportNotice}</p>}
         <form className="support-form" onSubmit={submitSupportMessage}>
-          <div className="field-grid"><div><label htmlFor="support-name">Nome</label><input id="support-name" autoComplete="name" value={supportForm.name} onChange={e=>setSupportForm({...supportForm,name:e.target.value})} minLength={2} maxLength={120} required placeholder="O seu nome"/></div><div><label htmlFor="support-e-mail">e-mail para contacto</label><input id="support-e-mail" type="e-mail" autoComplete="e-mail" value={supportForm.e-mail} onChange={e=>setSupportForm({...supportForm,e-mail:e.target.value})} maxLength={254} required placeholder="nome@exemplo.pt"/></div></div>
+          <div className="field-grid"><div><label htmlFor="support-name">Nome</label><input id="support-name" autoComplete="name" value={supportForm.name} onChange={e=>setSupportForm({...supportForm,name:e.target.value})} minLength={2} maxLength={120} required placeholder="O seu nome"/></div><div><label htmlFor="support-email">email para contacto</label><input id="support-email" type="email" autoComplete="email" value={supportForm.email} onChange={e=>setSupportForm({...supportForm,email:e.target.value})} maxLength={254} required placeholder="nome@exemplo.pt"/></div></div>
           <div><label htmlFor="support-subject">Assunto</label><input id="support-subject" value={supportForm.subject} onChange={e=>setSupportForm({...supportForm,subject:e.target.value})} minLength={3} maxLength={160} required placeholder="Ex.: problema ao cadastrar um equipamento"/></div>
           <div><label htmlFor="support-message">Mensagem</label><textarea id="support-message" value={supportForm.message} onChange={e=>setSupportForm({...supportForm,message:e.target.value})} minLength={10} maxLength={5000} rows={7} required placeholder="Explique como podemos ajudar..."/></div>
           <div><label htmlFor="support-attachment">Anexo (opcional)</label><input id="support-attachment" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setSupportFile(e.target.files?.[0]||null)}/><p className="field-help">JPG, PNG, WebP ou PDF, até 5 MB. Não envie palavras-passe nem documentos desnecessários.</p></div>
           <div className="support-form-actions"><button className="landing-signup-button" type="submit" disabled={supportSending}>{supportSending?"A enviar...":"Enviar mensagem"}</button><button className="landing-login-button" type="button" onClick={()=>setSupportPage(false)}>Cancelar</button></div>
-          <p className="support-privacy-note">Os anexos ficam em armazenamento privado e o acesso é reservado a administradores autorizados. Nesta versão, o envio regista o pedido na plataforma; não envia e-mail automaticamente.</p>
+          <p className="support-privacy-note">Os anexos ficam em armazenamento privado e o acesso é reservado a administradores autorizados. Nesta versão, o envio regista o pedido na plataforma; não envia email automaticamente.</p>
         </form>
       </section><footer className="landing-footer">PROTEGE · Apoio ao usuário</footer>
     </main>;
@@ -978,7 +978,7 @@ export default function App() {
         <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">cadastro e proteção de equipamentos</div></div>
         <div className="form-heading"><h1>{copy[screen][0]}</h1><p>{copy[screen][1]}</p></div>
         <form onSubmit={submit} autoComplete="on">
-          <label htmlFor="e-mail">e-mail</label><input id="e-mail" name="username" type="e-mail" autoComplete={screen === "login" ? "username" : "e-mail"} placeholder="nome@exemplo.pt" value={e-mail} onChange={e => setEmail(e.target.value)} required disabled={loading}/>
+          <label htmlFor="email">email</label><input id="email" name="username" type="email" autoComplete={screen === "login" ? "username" : "email"} placeholder="nome@exemplo.pt" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}/>
           {screen !== "reset" && <><label htmlFor="password">Senha</label><input id="password" name="password" type="password" autoComplete={screen === "register" ? "new-password" : "current-password"} placeholder="Digite a sua senha" value={password} onChange={e => setPassword(e.target.value)} minLength={6} required disabled={loading}/></>}
           {screen === "login" && <div className="forgot-row"><button className="text-button" type="button" onClick={() => changeScreen("reset")} disabled={loading}>Esqueceu-se da senha?</button></div>}
           <button className="primary-button" type="submit" disabled={loading}>{loading ? "Aguarde..." : screen === "login" ? "Entrar" : screen === "register" ? "Criar conta" : "Enviar instruções"}</button>
