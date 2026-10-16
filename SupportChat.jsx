@@ -113,6 +113,6 @@ export default function SupportChat({ supabase, user }) {
       <div className="support-chat-inputs"><textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="Escreva a sua mensagem..." rows={2} maxLength={5000} aria-label="Mensagem para o suporte" disabled={!conversation || sending}/><div className="support-chat-file-row"><label className="chat-file-button" htmlFor="customer-chat-file">＋ Anexar arquivo</label><input id="customer-chat-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf" onChange={e => setAttachment(e.target.files?.[0] || null)} disabled={sending} hidden/><span className="field-help">Imagem, vídeo ou PDF · Máx. 25 MB</span>{attachment && <span className="chat-file-selected">{attachment.name} <button type="button" onClick={() => {setAttachment(null); const el=document.getElementById("customer-chat-file"); if(el) el.value="";}}>×</button></span>}</div></div>
       <button className="primary-button" type="submit" disabled={!conversation || (!draft.trim() && !attachment) || sending}>{sending ? "A enviar..." : "Enviar"} <span aria-hidden="true">➤</span></button>
     </form>
-    <p className="field-help support-chat-footnote">Não precisa de indicar nome ou e-mail. A PROTEGE identifica a sua conta automaticamente.</p>
+    <p className="field-help support-chat-footnote">Não precisa de indicar nome ou email. A PROTEGE identifica a sua conta automaticamente.</p>
   </section>;
 }
