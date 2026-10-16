@@ -41,51 +41,73 @@ function compressPhoto(file) {
 
 
 function AdminPanel({ supabase, user, onSignOut }) {
-  const [records, setRecords] = useState([]);
-  const [loadingRecords, setLoadingRecords] = useState(true);
+  const [admins, setAdmins] = useState([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const [username, setUsername] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [ownPassword, setOwnPassword] = useState("");
+  const [newUsername, setNewUsername] = useState(user.user_metadata?.username || "admin");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoadingRecords(true);
-      setError("");
-      const { data, error: queryError } = await supabase
-        .from("equipments")
-        .select("id,user_id,name,category,brand,model,serial_number,status,restriction_status,created_at,image_paths")
-        .order("created_at", { ascending: false });
-      if (queryError) {
-        if (!cancelled) setError("Não foi possível carregar os registos. Confirme as permissões e tente novamente.");
-        if (!cancelled) setLoadingRecords(false);
-        return;
-      }
-      const rows = await Promise.all((data || []).map(async item => {
-        const paths = Array.isArray(item.image_paths) ? item.image_paths : [];
-        const photos = await Promise.all(paths.map(async path => {
-          const { data: signed } = await supabase.storage.from("equipment-evidence").createSignedUrl(path, 600);
-          return signed?.signedUrl ? { path, url: signed.signedUrl } : null;
-        }));
-        return { ...item, photos: photos.filter(Boolean) };
-      }));
-      if (!cancelled) {
-        setRecords(rows);
-        setLoadingRecords(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [supabase]);
+  async function callAdmin(action, extra = {}) {
+    const { data, error } = await supabase.functions.invoke("manage-admins", { body: { action, ...extra } });
+    if (error) throw new Error(data?.error || error.message || "Não foi possível concluir a operação.");
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+  async function loadAdmins() {
+    setLoadingAdmins(true); setError("");
+    try { const data = await callAdmin("list"); setAdmins(data.admins || []); }
+    catch (e) { setError(e.message || "Não foi possível carregar os administradores."); }
+    finally { setLoadingAdmins(false); }
+  }
+  useEffect(() => { loadAdmins(); }, []);
 
-  const term = search.trim().toLowerCase();
-  const filtered = records.filter(item =>
-    [item.name, item.category, item.brand, item.model, item.serial_number, item.status, item.restriction_status]
-      .some(value => (value || "").toLowerCase().includes(term))
-  );
-  const restricted = records.filter(item => item.status === "Roubado" || item.restriction_status === "Com restrição").length;
-  const active = records.filter(item => item.status === "Ativo").length;
-  const selected = records.find(item => item.id === selectedId);
+  async function createAdmin(event) {
+    event.preventDefault(); setBusy(true); setError(""); setMessage("");
+    try {
+      await callAdmin("create", { username: username.trim(), password: createPassword });
+      setUsername(""); setCreatePassword("");
+      setMessage("Conta administrativa criada com sucesso.");
+      await loadAdmins();
+    } catch (e) { setError(e.message || "Não foi possível criar a conta."); }
+    finally { setBusy(false); }
+  }
+  async function updateAdminAccount(event) {
+    event.preventDefault(); setBusy(true); setError(""); setMessage("");
+    try {
+      if (newUsername.trim() && newUsername.trim().toLowerCase() !== (user.user_metadata?.username || "")) {
+        await callAdmin("change-username", { username: newUsername.trim() });
+      }
+      if (ownPassword) {
+        if (ownPassword.length < 12) throw new Error("A nova palavra-passe deve ter pelo menos 12 caracteres.");
+        const { error } = await supabase.auth.updateUser({ password: ownPassword });
+        if (error) throw error;
+      }
+      setOwnPassword("");
+      setMessage("Dados da conta atualizados. Se alterou o nome de utilizador, use-o na próxima sessão.");
+      await loadAdmins();
+    } catch (e) { setError(e.message || "Não foi possível atualizar a conta."); }
+    finally { setBusy(false); }
+  }
+  async function removeAdmin(item) {
+    if (!window.confirm("Remover o acesso administrativo de " + item.username + "? Esta ação elimina a conta de autenticação associada.")) return;
+    setBusy(true); setError(""); setMessage("");
+    try { await callAdmin("delete", { user_id: item.user_id }); setMessage("Conta administrativa removida."); await loadAdmins(); }
+    catch (e) { setError(e.message || "Não foi possível remover a conta."); }
+    finally { setBusy(false); }
+  }
+  async function handOverSuperAdmin(item) {
+    if (!window.confirm("Transferir o superadministrador para «" + item.username + "» e retirar imediatamente o acesso administrativo desta conta? Terá de iniciar sessão com a nova conta.")) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      await callAdmin("transfer-super-admin", { user_id: item.user_id });
+      await supabase.auth.signOut();
+      window.location.href = "/admin";
+    } catch (e) { setError(e.message || "Não foi possível transferir a administração."); setBusy(false); }
+  }
 
   return (
     <main className="dashboard-shell admin-shell">
@@ -94,46 +116,47 @@ function AdminPanel({ supabase, user, onSignOut }) {
           <div className="brand-mark small-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div>
           <div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
         </div>
-        <div className="user-actions">
-          <span className="admin-session-label">Sessão autorizada</span>
-          <span className="user-email">{user.email}</span>
-          <button className="outline-button" onClick={() => { window.location.href = "/"; }}>Área do utilizador</button>
-          <button className="outline-button" onClick={onSignOut}>Terminar sessão</button>
-        </div>
+        <div className="user-actions"><span className="admin-session-label">Acesso restrito</span><span className="user-email">{user.email}</span><button className="outline-button" onClick={onSignOut}>Terminar sessão</button></div>
       </header>
       <section className="dashboard-content">
-        <div className="dashboard-welcome admin-welcome">
-          <div><p className="eyebrow">ACESSO RESTRITO</p><h1>Painel de administração</h1><p className="muted-copy">Vista inicial de consulta. As ações que alteram registos ainda não estão ativadas.</p></div>
-        </div>
-        <div className="stats-grid">
-          <article className="stat-card"><span>Total de registos</span><strong>{records.length}</strong></article>
-          <article className="stat-card"><span>Equipamentos ativos</span><strong>{active}</strong></article>
-          <article className="stat-card"><span>Com restrição / roubados</span><strong>{restricted}</strong></article>
-        </div>
-        {error && <p className="dashboard-notice" role="alert">{error}</p>}
+        <div className="dashboard-welcome admin-welcome"><div><p className="eyebrow">SUPERADMINISTRAÇÃO</p><h1>Gestão de acessos</h1><p className="muted-copy">Crie e remova contas administrativas e proteja as credenciais de acesso.</p></div></div>
+        {error && <p className="dashboard-notice admin-error" role="alert">{error}</p>}
+        {message && <p className="dashboard-notice" role="status">{message}</p>}
+        <section className="equipment-form-card">
+          <div className="form-card-heading"><div><h2>A minha conta administrativa</h2><p>Altere o nome de utilizador e/ou a palavra-passe.</p></div></div>
+          <form className="equipment-form" onSubmit={updateAdminAccount}>
+            <div className="field-grid">
+              <div><label htmlFor="admin-own-username">Nome de utilizador</label><input id="admin-own-username" value={newUsername} onChange={e=>setNewUsername(e.target.value)} minLength={3} maxLength={30} pattern="[A-Za-z0-9._-]+" required/></div>
+              <div><label htmlFor="admin-own-password">Nova palavra-passe</label><input id="admin-own-password" type="password" autoComplete="new-password" placeholder="Mínimo de 12 caracteres" value={ownPassword} onChange={e=>setOwnPassword(e.target.value)} minLength={12}/></div>
+            </div>
+            <p className="field-help">Ao alterar o nome, o acesso passa a usar esse nome de utilizador. A palavra-passe só muda se preencher o campo.</p>
+            <div className="form-actions"><button className="primary-button" type="submit" disabled={busy}>{busy ? "A guardar..." : "Guardar alterações"}</button></div>
+          </form>
+        </section>
+        <section className="equipment-form-card">
+          <div className="form-card-heading"><div><h2>Criar administrador</h2><p>Esta área não permite criar contas públicas; apenas contas administrativas.</p></div></div>
+          <form className="equipment-form" onSubmit={createAdmin}>
+            <div className="field-grid">
+              <div><label htmlFor="new-admin-username">Nome de utilizador</label><input id="new-admin-username" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex.: operador01" minLength={3} maxLength={30} pattern="[A-Za-z0-9._-]+" required/></div>
+              <div><label htmlFor="new-admin-password">Palavra-passe inicial</label><input id="new-admin-password" type="password" autoComplete="new-password" value={createPassword} onChange={e=>setCreatePassword(e.target.value)} placeholder="Mínimo de 12 caracteres" minLength={12} required/></div>
+            </div>
+            <p className="field-help">Use uma palavra-passe única com pelo menos 12 caracteres. Entregue as credenciais diretamente e em segurança.</p>
+            <div className="form-actions"><button className="primary-button" type="submit" disabled={busy}>{busy ? "A criar..." : "Criar conta administrativa"}</button></div>
+          </form>
+        </section>
         <section className="equipment-list-card admin-list-card">
-          <div className="list-heading"><div><h2>Todos os equipamentos</h2><p>Dados visíveis apenas após validação da função de administrador.</p></div><input className="search-input" aria-label="Pesquisar todos os equipamentos" placeholder="Pesquisar nome, série, marca..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-          {loadingRecords ? <div className="empty-state">A carregar os registos autorizados...</div> :
-            filtered.length === 0 ? <div className="empty-state"><div className="empty-icon">⌕</div><h3>{records.length ? "Nenhum resultado" : "Ainda não existem registos"}</h3><p>{records.length ? "Tente outro termo de pesquisa." : "Os equipamentos registados aparecerão aqui."}</p></div> :
-            <div className="equipment-table-wrap"><table className="equipment-table admin-table"><thead><tr><th>Equipamento</th><th>N.º de série</th><th>Estado</th><th>Restrição</th><th>Registado em</th><th>Provas</th></tr></thead><tbody>
-              {filtered.map(item => <tr key={item.id}>
-                <td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ") || item.category}</span></td>
-                <td>{item.serial_number || "—"}</td>
-                <td><span className={"status-pill status-" + (item.status || "").toLowerCase()}>{item.status}</span></td>
-                <td><span className={"admin-restriction " + (item.status === "Roubado" || item.restriction_status === "Com restrição" ? "admin-restriction-red" : "admin-restriction-green")}>{item.status === "Roubado" || item.restriction_status === "Com restrição" ? "COM RESTRIÇÃO" : "SEM RESTRIÇÃO"}</span></td>
-                <td>{item.created_at ? new Date(item.created_at).toLocaleDateString("pt-PT") : "—"}</td>
-                <td><button className="text-button" onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}>{item.photos.length} foto(s) · {selectedId === item.id ? "Fechar" : "Ver"}</button></td>
-              </tr>)}
+          <div className="list-heading"><div><h2>Contas administrativas</h2><p>Somente o superadministrador pode gerir estas contas.</p></div><button className="outline-button" onClick={loadAdmins} disabled={loadingAdmins}>Atualizar</button></div>
+          {loadingAdmins ? <div className="empty-state">A carregar as contas...</div> : admins.length === 0 ? <div className="empty-state">Não existem contas administrativas.</div> :
+            <div className="equipment-table-wrap"><table className="equipment-table admin-table"><thead><tr><th>Utilizador</th><th>Tipo de acesso</th><th>Conta de autenticação</th><th>Ações</th></tr></thead><tbody>
+              {admins.map(item=><tr key={item.user_id}><td><strong>{item.username || "Sem nome"}</strong></td><td>{item.role === "super_admin" ? "Superadministrador" : "Administrador"}</td><td>{item.email}</td><td><div className="table-actions">
+                {item.role !== "super_admin" && <button className="delete-button" disabled={busy} onClick={()=>removeAdmin(item)}>Remover</button>}
+                {item.role !== "super_admin" && <button className="text-button" disabled={busy} onClick={()=>handOverSuperAdmin(item)}>Transferir superadmin</button>}
+              </div></td></tr>)}
             </tbody></table></div>}
         </section>
-        {selected && <section className="equipment-form-card admin-evidence-card">
-          <div className="form-card-heading"><div><h2>Provas fotográficas</h2><p>{selected.name} · Série: {selected.serial_number || "—"}</p></div><button className="close-button" type="button" onClick={() => setSelectedId(null)} aria-label="Fechar">×</button></div>
-          {selected.photos.length ? <div className="admin-photo-grid">{selected.photos.map(photo => <a key={photo.path} href={photo.url} target="_blank" rel="noreferrer"><img src={photo.url} alt={"Prova fotográfica de " + selected.name}/><span>Abrir fotografia</span></a>)}</div> : <p className="muted-copy">Não há fotografias acessíveis neste registo.</p>}
-          <p className="field-help">As ligações às fotografias expiram automaticamente após 10 minutos.</p>
-        </section>}
-        <p className="privacy-note">Área privada · Não partilhe esta sessão. Todas as permissões continuam a ser verificadas pelo Supabase.</p>
+        <p className="privacy-note">A administração é validada no servidor. O endereço /admin não substitui a autenticação nem as permissões.</p>
       </section>
-      <footer>PROTEGE · Administração</footer>
+      <footer>PROTEGE · Administração privada</footer>
     </main>
   );
 }
