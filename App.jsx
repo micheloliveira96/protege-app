@@ -608,6 +608,10 @@ export default function App() {
         const { error: cleanupError } = await supabase.storage.from(bucketName).remove(paths);
         if (cleanupError) cleanupWarning = " O registo foi eliminado, mas algumas fotografias antigas não puderam ser removidas.";
       }
+      if (item.invoice_path) {
+        const { error: documentCleanupError } = await supabase.storage.from(documentBucketName).remove([item.invoice_path]);
+        if (documentCleanupError) cleanupWarning += " O comprovativo de compra não pôde ser removido.";
+      }
       setEquipment(current => current.filter(entry => entry.id !== item.id));
       setDashboardNotice("Equipamento eliminado." + cleanupWarning);
     }
