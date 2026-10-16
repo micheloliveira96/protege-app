@@ -134,3 +134,22 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 .account-overlay .account-card{max-height:calc(100vh - 48px);overflow-y:auto;margin:0;box-shadow:0 22px 70px rgba(8,25,48,.25)}
 .account-overlay .account-card .equipment-form{padding-bottom:2px}
 @media(max-width:700px){.profile-photo-editor{align-items:flex-start;flex-direction:column}.account-overlay{align-items:flex-start;padding:12px}.account-overlay .account-card{max-height:calc(100vh - 24px);padding:18px}.user-actions{flex-wrap:wrap;justify-content:flex-end}.profile-avatar{align-self:center}}
+
+
+/* Consulta pública de equipamentos na página de entrada */
+.public-lookup{width:100%;max-width:440px;margin:16px 0 0;border:1px solid #e1e8f1;border-radius:14px;background:#fff;box-shadow:0 8px 28px rgba(24,43,75,.045);overflow:hidden}
+.public-lookup-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:17px 20px;border:0;background:#fff;color:#1c3554;text-align:left;cursor:pointer}
+.public-lookup-toggle strong,.public-lookup-toggle small{display:block}
+.public-lookup-toggle strong{font-size:13px}
+.public-lookup-toggle small{margin-top:5px;color:#7b8799;font-size:11px;line-height:1.4}
+.public-lookup-toggle>span:last-child{font-size:22px;color:#315b8c}
+.public-lookup-content{padding:0 18px 17px;border-top:1px solid #edf0f5}
+.public-lookup-form{padding-top:17px}
+.public-lookup-form label{display:block;margin-bottom:8px;color:#29384f;font-size:13px;font-weight:650}
+.public-lookup-form .lookup-input-row{display:flex;gap:8px}
+.public-lookup-form .lookup-input-row input{flex:1;min-width:0;min-height:45px;margin:0;padding:0 11px;border:1px solid #dce3ed;border-radius:9px;font-size:12px}
+.public-lookup-form .primary-button{min-height:45px;padding:0 13px;font-size:12px}
+.public-lookup-result{margin:14px 0 0;padding:16px}
+.public-lookup-result strong{font-size:16px}
+.public-lookup-privacy{margin:12px 0 0}
+@media(max-width:480px){.public-lookup-form .lookup-input-row{flex-direction:column}.public-lookup-form .primary-button{width:100%}}
