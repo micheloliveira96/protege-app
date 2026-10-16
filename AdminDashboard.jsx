@@ -57,8 +57,8 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
     if (chatAttachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(chatAttachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }
     if (chatAttachment && chatAttachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setChatSending(true); setError("");
+    let attachmentPath = null;
     try {
-      let attachmentPath = null;
       if (chatAttachment) {
         const safeName = chatAttachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
         attachmentPath = selectedChat.user_id + "/" + selectedChat.id + "/" + crypto.randomUUID() + "-" + safeName;
@@ -72,7 +72,12 @@ export default function AdminDashboard({ supabase, user, onSignOut, onManageAcce
       const fileInput = document.getElementById("admin-chat-file"); if (fileInput) fileInput.value = "";
       await load("chat-messages",{conversation_id:selectedChat.id});
       await load("chat-list");
-    } catch(e) { setError(e.message||"Não foi possível enviar a resposta."); }
+    } catch(e) {
+      if (attachmentPath) {
+        await supabase.storage.from("support-chat-files").remove([attachmentPath]).catch(() => {});
+      }
+      setError(e.message||"Não foi possível enviar a resposta.");
+    }
     finally { setChatSending(false); }
   }
   const term = filter.trim().toLowerCase();
