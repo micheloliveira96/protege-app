@@ -872,7 +872,7 @@ export default function App() {
   if (supportPage && landingMode && screen === "login") {
     return <main className="protege-landing help-page support-page">
       <header className="landing-header"><a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setSupportPage(false);}}><span className="landing-brand-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span><span>PROTEGE</span></a><div className="landing-actions"><button className="landing-login-button" onClick={()=>setSupportPage(false)}>Voltar ao início</button></div></header>
-      <section className="help-hero"><p className="landing-kicker">APOIO AO Usuário</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um email válido para eventual contacto.</span></div></section>
+      <section className="help-hero"><p className="landing-kicker">APOIO AO USUÁRIO</p><h1>Fale com o <span>suporte</span></h1><p>Envie a sua dúvida ou descreva o problema. Pode anexar uma imagem ou documento para ajudar a equipa a compreender a situação.</p><div className="help-notice"><strong>Como funciona?</strong><span>A mensagem será recebida na área administrativa da PROTEGE. Indique um email válido para eventual contacto.</span></div></section>
       <section className="support-form-wrap">
         {supportError&&<p className="dashboard-notice admin-error" role="alert">{supportError}</p>}{supportNotice&&<p className="dashboard-notice" role="status">{supportNotice}</p>}
         <form className="support-form" onSubmit={submitSupportMessage}>
@@ -883,7 +883,7 @@ export default function App() {
           <div className="support-form-actions"><button className="landing-signup-button" type="submit" disabled={supportSending}>{supportSending?"A enviar...":"Enviar mensagem"}</button><button className="landing-login-button" type="button" onClick={()=>setSupportPage(false)}>Cancelar</button></div>
           <p className="support-privacy-note">Os anexos ficam em armazenamento privado e o acesso é reservado a administradores autorizados. Nesta versão, o envio regista o pedido na plataforma; não envia email automaticamente.</p>
         </form>
-      </section><footer className="landing-footer">PROTEGE · Apoio ao usuário</footer>
+      </section><footer className="landing-footer">PROTEGE · APOIO AO USUÁRIO</footer>
     </main>;
   }
 
