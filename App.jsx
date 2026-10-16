@@ -89,9 +89,6 @@ function AdminPanel({ supabase, user, onSignOut }) {
   async function updateAdminAccount(event) {
     event.preventDefault(); setBusy(true); setError(""); setMessage("");
     try {
-      if (newUsername.trim() && newUsername.trim().toLowerCase() !== (user.user_metadata?.username || "")) {
-        await callAdmin("change-username", { username: newUsername.trim() });
-      }
       if (ownPassword || ownCurrentPassword || confirmOwnPassword) {
         if (!ownCurrentPassword) throw new Error("Introduza a palavra-passe antiga.");
         if (ownPassword.length < 12) throw new Error("A nova palavra-passe deve ter pelo menos 12 caracteres.");
@@ -101,6 +98,9 @@ function AdminPanel({ supabase, user, onSignOut }) {
         if (verifyError) throw new Error("A palavra-passe antiga está incorreta.");
         const { error: updateError } = await supabase.auth.updateUser({ password: ownPassword });
         if (updateError) throw updateError;
+      }
+      if (newUsername.trim() && newUsername.trim().toLowerCase() !== (user.user_metadata?.username || "")) {
+        await callAdmin("change-username", { username: newUsername.trim() });
       }
       setOwnCurrentPassword(""); setOwnPassword(""); setConfirmOwnPassword(""); setShowOwnPasswords(false);
       setMessage("Dados da conta atualizados. Se alterou o nome de utilizador, use-o na próxima sessão.");
