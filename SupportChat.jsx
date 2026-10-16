@@ -72,8 +72,8 @@ export default function SupportChat({ supabase, user }) {
     if (attachment && !["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/quicktime","video/webm","application/pdf"].includes(attachment.type)) { setError("Formato não permitido. Envie uma imagem, vídeo MP4/MOV/WebM ou PDF."); return; }
     if (attachment && attachment.size > 25 * 1024 * 1024) { setError("O ficheiro deve ter no máximo 25 MB."); return; }
     setSending(true); setError("");
+    let attachmentPath = null;
     try {
-      let attachmentPath = null;
       if (attachment) {
         const safeName = attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "ficheiro";
         attachmentPath = user.id + "/" + conversation.id + "/" + crypto.randomUUID() + "-" + safeName;
@@ -91,6 +91,9 @@ export default function SupportChat({ supabase, user }) {
       const fileInput = document.getElementById("customer-chat-file"); if (fileInput) fileInput.value = "";
       await loadMessages(conversation.id, true);
     } catch {
+      if (attachmentPath) {
+        await supabase.storage.from("support-chat-files").remove([attachmentPath]).catch(() => {});
+      }
       setError("Não foi possível enviar a mensagem. Tente novamente.");
     } finally { setSending(false); }
   }
