@@ -208,6 +208,7 @@ function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
 
 export default function App() {
   const [screen, setScreen] = useState("login");
+  const [landingMode, setLandingMode] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
@@ -445,6 +446,7 @@ export default function App() {
   }
 
   function changeScreen(next) {
+    setLandingMode(false);
     setScreen(next);
     setPassword("");
     setNotice("");
@@ -761,8 +763,50 @@ export default function App() {
     );
   }
 
+  if (landingMode && screen === "login") {
+    return (
+      <main className="protege-landing">
+        <header className="landing-header">
+          <a className="landing-brand" href="/" aria-label="PROTEGE - Início">
+            <span className="landing-brand-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span>
+            <span>PROTEGE</span>
+          </a>
+          <nav className="landing-nav" aria-label="Navegação principal">
+            <a className="active" href="#inicio">Início</a><a href="#consultar">Consultar</a><a href="#como-funciona">Como funciona</a><a href="#ajuda">Ajuda</a>
+          </nav>
+          <div className="landing-actions"><button className="landing-login-button" onClick={()=>setLandingMode(false)}><span aria-hidden="true">↪</span> Entrar</button><button className="landing-signup-button" onClick={()=>changeScreen("register")}><span aria-hidden="true">♙</span> Criar conta</button></div>
+        </header>
+        <section className="landing-hero" id="inicio">
+          <div className="landing-art" aria-hidden="true"><img src="/protege-tech-visual.svg" alt="" fetchPriority="high"/></div>
+          <div className="landing-copy">
+            <div className="landing-kicker"><span className="landing-mini-shield">⬡</span> SEGURANÇA PARA O SEU DIA A DIA</div>
+            <h1>PROTEGE</h1>
+            <h2>Registe os seus equipamentos<br/>e <span>aumente a sua segurança.</span></h2>
+            <p className="landing-description">Uma plataforma em Portugal para registo e consulta de equipamentos eletrónicos, ajudando no combate ao furto e roubo.</p>
+            <form className="landing-lookup" id="consultar" onSubmit={lookupEquipment}>
+              <span className="landing-search-icon" aria-hidden="true">⌕</span>
+              <input aria-label="Número de série para consultar" value={lookupSerial} onChange={e=>setLookupSerial(e.target.value)} placeholder="Digite o número de série (SN) para consultar" minLength={3} maxLength={160} required/>
+              <button type="submit" disabled={lookupLoading}><span aria-hidden="true">⌕</span>{lookupLoading ? "A consultar..." : "Consultar"}</button>
+            </form>
+            {lookupResult && <div className={"landing-lookup-result "+(lookupResult.error||!lookupResult.found?"lookup-not-found":lookupResult.status==="Roubado"||lookupResult.restriction_status==="Com restrição"?"restriction-red":"restriction-green")}>
+              {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> : !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> : <><span className="lookup-status">{lookupResult.status==="Roubado"||lookupResult.restriction_status==="Com restrição"?"COM RESTRIÇÃO":"SEM RESTRIÇÃO"}</span><strong>{lookupResult.name}</strong><p>{lookupResult.status==="Roubado"?"Atenção: este equipamento está registado como roubado.":lookupResult.restriction_status==="Com restrição"?"Atenção: este equipamento tem uma restrição registada na PROTEGE.":"Não existe uma restrição assinalada neste registo."}</p></>}
+            </div>}
+          </div>
+        </section>
+        <section className="landing-benefits" id="como-funciona">
+          <article><span className="benefit-icon">⬡</span><div><strong>Registo seguro</strong><p>Proteja os seus equipamentos</p></div></article>
+          <article><span className="benefit-icon">⌕</span><div><strong>Consulta simples</strong><p>Verifique a situação de um equipamento</p></div></article>
+          <article><span className="benefit-icon">♧</span><div><strong>Ajuda no combate ao crime</strong><p>Mais segurança para todos</p></div></article>
+          <article><span className="benefit-icon">▣</span><div><strong>Os seus dados protegidos</strong><p>Com privacidade e acesso controlado</p></div></article>
+        </section>
+        <footer className="landing-footer" id="ajuda">PROTEGE · Registo e proteção de equipamentos <span>A consulta pública não revela dados pessoais do proprietário.</span></footer>
+      </main>
+    );
+  }
+
   return (
-    <main className="page-shell">
+    <main className="page-shell auth-page">
+      <button className="auth-home-link" type="button" onClick={()=>{setLandingMode(true);setNotice("");}}>← Voltar à página inicial</button>
       <section className="login-card">
         <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Registo e proteção de equipamentos</div></div>
         <div className="form-heading"><h1>{copy[screen][0]}</h1><p>{copy[screen][1]}</p></div>
@@ -779,21 +823,6 @@ export default function App() {
            <>Lembrou-se da palavra-passe? <button className="text-button" type="button" onClick={() => changeScreen("login")} disabled={loading}>Voltar a entrar</button></>}
         </div>
       </section>
-      {screen === "login" && <section className="public-lookup">
-        <button className="public-lookup-toggle" type="button" onClick={() => setShowPublicLookup(value => !value)} aria-expanded={showPublicLookup}>
-          <span><strong>Consultar equipamento</strong><small>Verifique um número de série sem criar conta</small></span><span aria-hidden="true">{showPublicLookup ? "−" : "+"}</span>
-        </button>
-        {showPublicLookup && <div className="public-lookup-content">
-          <form className="public-lookup-form" onSubmit={lookupEquipment}>
-            <label htmlFor="public-serial">Número de série</label>
-            <div className="lookup-input-row"><input id="public-serial" value={lookupSerial} onChange={e => setLookupSerial(e.target.value)} placeholder="Introduza o número de série" minLength={3} maxLength={160} required/><button className="primary-button" type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button></div>
-          </form>
-          {lookupResult && <div className={"lookup-result-card public-lookup-result " + (lookupResult.error ? "lookup-not-found" : !lookupResult.found ? "lookup-not-found" : lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição" ? "restriction-red" : "restriction-green")}>
-            {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> : !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> : <><span className="lookup-status">{lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição" ? "COM RESTRIÇÃO" : "SEM RESTRIÇÃO"}</span><strong>{lookupResult.name}</strong><p>{lookupResult.status === "Roubado" ? "ATENÇÃO: este equipamento está registado como roubado." : lookupResult.restriction_status === "Com restrição" ? "ATENÇÃO: este equipamento tem uma restrição registada na PROTEGE." : "Não existe uma restrição assinalada neste registo."}</p></>}
-          </div>}
-          <p className="field-help public-lookup-privacy">A consulta não mostra o nome, contacto ou fotografias do proprietário.</p>
-        </div>}
-      </section>}
       <footer>PROTEGE · Registo e proteção de equipamentos</footer>
     </main>
   );
