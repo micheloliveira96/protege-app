@@ -4,7 +4,7 @@ import AdminDashboard from "./AdminDashboard.jsx";
 
 const emptyEquipment = {
   name: "", category: "Eletrónica", brand: "", model: "",
-  serial_number: "", description: "", status: "Ativo"
+  serial_number: "", imei: "", description: "", status: "Ativo"
 };
 const categories = ["Eletrónica", "Informática", "Telemóvel", "Fotografia", "Veículo", "Ferramenta", "Casa", "Outro"];
 const statuses = ["Ativo", "Perdido", "Roubado", "Vendido"];
@@ -467,7 +467,7 @@ export default function App() {
     setRemovedPhotos([]);
     setEquipmentForm({
       name: item.name || "", category: item.category || "Outro", brand: item.brand || "",
-      model: item.model || "", serial_number: item.serial_number || "",
+      model: item.model || "", serial_number: item.serial_number || "", imei: item.imei || "",
       description: item.description || "", status: item.status || "Ativo"
     });
     setSelectedPhotos([]);
@@ -501,8 +501,9 @@ export default function App() {
     event.preventDefault();
     if (!supabase || !session?.user) return;
     const serial = equipmentForm.serial_number.trim();
-    if (serial.length < 3) {
-      setDashboardNotice("Introduza um número de série com pelo menos 3 caracteres.");
+    const imei = (equipmentForm.imei || "").trim();
+    if (serial.length < 3 && imei.length < 3) {
+      setDashboardNotice("Introduza um número de série ou IMEI com pelo menos 3 caracteres.");
       return;
     }
     if (existingPhotos.length + selectedPhotos.length < 2 || existingPhotos.length + selectedPhotos.length > 4) {
@@ -515,7 +516,7 @@ export default function App() {
     let cleanupWarning = "";
     try {
       const payload = {
-        ...equipmentForm, name: equipmentForm.name.trim(), serial_number: serial,
+        ...equipmentForm, name: equipmentForm.name.trim(), serial_number: serial, imei: imei || null,
         user_id: session.user.id, updated_at: new Date().toISOString()
       };
       if (editingId) {
@@ -584,7 +585,7 @@ export default function App() {
     setLookupResult(null);
     try {
       const serial = lookupSerial.trim();
-      if (serial.length < 3) throw new Error("Introduza um número de série válido.");
+      if (serial.length < 3) throw new Error("Introduza um número de série (SN) ou IMEI válido.");
       const { data, error } = await supabase.functions.invoke("lookup-equipment", { body: { serial_number: serial } });
       if (error) throw error;
       setLookupResult(data);
@@ -606,7 +607,7 @@ export default function App() {
   const filteredEquipment = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return equipment;
-    return equipment.filter(item => [item.name, item.category, item.brand, item.model, item.serial_number, item.status]
+    return equipment.filter(item => [item.name, item.category, item.brand, item.model, item.serial_number, item.imei, item.status]
       .some(value => (value || "").toLowerCase().includes(term)));
   }, [equipment, search]);
 
@@ -721,7 +722,7 @@ export default function App() {
                   <div><label htmlFor="eq-status">Estado</label><select id="eq-status" value={equipmentForm.status} onChange={e => setEquipmentForm({...equipmentForm, status:e.target.value})}>{statuses.map(value => <option key={value}>{value}</option>)}</select></div>
                   <div><label htmlFor="eq-brand">Marca</label><input id="eq-brand" value={equipmentForm.brand} onChange={e => setEquipmentForm({...equipmentForm, brand:e.target.value})} placeholder="Ex.: Apple" maxLength={100}/></div>
                   <div><label htmlFor="eq-model">Modelo</label><input id="eq-model" value={equipmentForm.model} onChange={e => setEquipmentForm({...equipmentForm, model:e.target.value})} placeholder="Ex.: iPhone 15 Pro" maxLength={100}/></div>
-                  <div className="field-full"><label htmlFor="eq-serial">Número de série *</label><input id="eq-serial" value={equipmentForm.serial_number} onChange={e => setEquipmentForm({...equipmentForm, serial_number:e.target.value})} placeholder="Introduza o número de série" maxLength={160} required/></div>
+                  <div className="field-full"><label htmlFor="eq-serial">Número de série (SN)</label><input id="eq-serial" value={equipmentForm.serial_number} onChange={e => setEquipmentForm({...equipmentForm, serial_number:e.target.value})} placeholder="Introduza o número de série (SN)" maxLength={160}/><label htmlFor="eq-imei">IMEI</label><input id="eq-imei" value={equipmentForm.imei || ""} onChange={e => setEquipmentForm({...equipmentForm, imei:e.target.value.replace(/[^0-9]/g, "").slice(0, 16)})} placeholder="Introduza o IMEI (15 dígitos, se aplicável)" inputMode="numeric" maxLength={16}/><p className="field-help">Preencha o SN, o IMEI ou ambos. O IMEI é usado principalmente em telemóveis e alguns equipamentos com ligação móvel.</p></div>
                   <div className="field-full"><label htmlFor="eq-description">Notas / descrição</label><textarea id="eq-description" rows="3" value={equipmentForm.description} onChange={e => setEquipmentForm({...equipmentForm, description:e.target.value})} placeholder="Características, acessórios ou outros detalhes" maxLength={1500}/></div>
                   <div className="field-full"><label htmlFor="eq-photos">Fotografias do equipamento * (2 a 4)</label><input id="eq-photos" type="file" accept="image/*" multiple onChange={addPhotos}/><p className="field-help">As fotografias são guardadas num espaço privado. Cada imagem é comprimida antes do envio.</p></div>
                 </div>
@@ -737,14 +738,14 @@ export default function App() {
               <div className="list-heading"><div><h2>Equipamentos registados</h2><p>{equipment.length} {equipment.length === 1 ? "equipamento" : "equipamentos"} na sua conta</p></div><input className="search-input" aria-label="Pesquisar equipamentos" placeholder="Pesquisar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
               {loadingEquipment ? <div className="empty-state">A carregar os seus equipamentos...</div> :
                 filteredEquipment.length === 0 ? <div className="empty-state"><div className="empty-icon">⌕</div><h3>{equipment.length ? "Nenhum resultado encontrado" : "Ainda não registou equipamentos"}</h3><p>{equipment.length ? "Experimente pesquisar por outro nome, marca ou número de série." : "Comece por registar o seu primeiro equipamento para ter os dados organizados."}</p>{!equipment.length && <button className="primary-button" onClick={startNewEquipment}>＋ Registar primeiro equipamento</button>}</div> :
-                <div className="equipment-table-wrap"><table className="equipment-table"><thead><tr><th>Equipamento</th><th>Categoria</th><th>N.º de série</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{filteredEquipment.map(item => <tr key={item.id}><td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ") || "Sem marca/modelo"}</span></td><td>{item.category}</td><td>{item.serial_number || "—"}</td><td><span className={"status-pill status-" + item.status.toLowerCase()}>{item.status}</span></td><td><div className="table-actions"><button className="text-button" onClick={() => startEdit(item)}>Editar</button><button className="delete-button" onClick={() => deleteEquipment(item)}>Eliminar</button></div></td></tr>)}</tbody></table></div>}
+                <div className="equipment-table-wrap"><table className="equipment-table"><thead><tr><th>Equipamento</th><th>Categoria</th><th>SN / IMEI</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{filteredEquipment.map(item => <tr key={item.id}><td><strong>{item.name}</strong><span className="table-subtitle">{[item.brand,item.model].filter(Boolean).join(" · ") || "Sem marca/modelo"}</span></td><td>{item.category}</td><td><span className="table-subtitle">SN: {item.serial_number || "—"}</span><span className="table-subtitle">IMEI: {item.imei || "—"}</span></td><td><span className={"status-pill status-" + item.status.toLowerCase()}>{item.status}</span></td><td><div className="table-actions"><button className="text-button" onClick={() => startEdit(item)}>Editar</button><button className="delete-button" onClick={() => deleteEquipment(item)}>Eliminar</button></div></td></tr>)}</tbody></table></div>}
             </section>
           </>}
 
           {activeTab === "lookup" && <section className="equipment-list-card">
             <form className="lookup-form" onSubmit={lookupEquipment}>
-              <div className="form-card-heading"><div><h2>Consultar pelo número de série</h2><p>Introduza o número de série para verificar se existe um registo na PROTEGE e se tem alguma restrição.</p></div></div>
-              <div className="lookup-input-row"><input aria-label="Número de série para consulta" value={lookupSerial} onChange={e => setLookupSerial(e.target.value)} placeholder="Número de série" minLength={3} maxLength={160} required/><button className="primary-button" type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button></div>
+              <div className="form-card-heading"><div><h2>Consultar pelo número de série</h2><p>Introduza o número de série (SN) ou o IMEI para verificar o registo e eventuais restrições.</p></div></div>
+              <div className="lookup-input-row"><input aria-label="Número de série ou IMEI para consulta" value={lookupSerial} onChange={e => setLookupSerial(e.target.value)} placeholder="SN ou IMEI" minLength={3} maxLength={160} required/><button className="primary-button" type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button></div>
             </form>
             {lookupResult && (() => {
               const restricted = lookupResult.found && (lookupResult.status === "Roubado" || lookupResult.restriction_status === "Com restrição");
@@ -785,7 +786,7 @@ export default function App() {
             <p className="landing-description">Uma plataforma em Portugal para registo e consulta de equipamentos eletrónicos, ajudando no combate ao furto e roubo.</p>
             <form className="landing-lookup" id="consultar" onSubmit={lookupEquipment}>
               <label className="landing-lookup-title" htmlFor="landing-serial">Consulta rápida</label>
-              <input id="landing-serial" aria-label="Número de série para consulta" value={lookupSerial} onChange={e=>setLookupSerial(e.target.value)} placeholder="Digite o número de série (SN) para consultar" minLength={3} maxLength={160} required/>
+              <input id="landing-serial" aria-label="Número de série para consulta" value={lookupSerial} onChange={e=>setLookupSerial(e.target.value)} placeholder="Digite o SN ou IMEI para consultar" minLength={3} maxLength={160} required/>
               <button type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button>
             </form>
             {lookupResult && <div className={"landing-lookup-result "+(lookupResult.error||!lookupResult.found?"lookup-not-found":lookupResult.status==="Roubado"||lookupResult.restriction_status==="Com restrição"?"restriction-red":"restriction-green")}>
