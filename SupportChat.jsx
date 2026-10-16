@@ -91,9 +91,6 @@ export default function SupportChat({ supabase, user }) {
       const fileInput = document.getElementById("customer-chat-file"); if (fileInput) fileInput.value = "";
       await loadMessages(conversation.id, true);
     } catch {
-      if (attachmentPath) {
-        await supabase.storage.from("support-chat-files").remove([attachmentPath]).catch(() => {});
-      }
       setError("Não foi possível enviar a mensagem. Tente novamente.");
     } finally { setSending(false); }
   }
