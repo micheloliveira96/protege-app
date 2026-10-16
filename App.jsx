@@ -172,7 +172,7 @@ export default function App() {
   const [profileForm, setProfileForm] = useState({ first_name: "", last_name: "", date_of_birth: "", country: "", city: "", phone: "" });
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminChecking, setAdminChecking] = useState(true);
-  const [isAdminRoute] = useState(() => window.location.pathname.replace(/\\/+$/, "") === "/admin");
+  const [isAdminRoute] = useState(() => window.location.pathname.replace(/\/+$/, "") === "/admin");
 
   useEffect(() => {
     if (!supabase) return;
