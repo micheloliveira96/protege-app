@@ -366,6 +366,7 @@ export default function App() {
   }, [equipment, search]);
 
   if (session?.user) {
+    const profileComplete = Boolean(profile?.first_name?.trim() && profile?.last_name?.trim() && profile?.phone?.trim() && profile?.country?.trim());
     const counts = {
       total: equipment.length,
       active: equipment.filter(item => item.status === "Ativo").length,
@@ -386,8 +387,8 @@ export default function App() {
           </div>
         </header>
         <section className="dashboard-content">
-          {showAccount && <section className="equipment-form-card account-card">
-            <div className="form-card-heading"><div><h2>{profile ? "Sua conta" : "Complete os seus dados"}</h2><p>{profile ? "Pode atualizar estes dados sempre que precisar." : "Antes de continuar, complete os dados obrigatórios do seu perfil."}</p></div>{profile && <button className="close-button" type="button" onClick={() => { setShowAccount(false); setProfileNotice(""); }} aria-label="Fechar">×</button>}</div>
+          {showAccount && <div className={!profileComplete ? "account-overlay" : "account-editor-wrap"}><section className="equipment-form-card account-card">
+            <div className="form-card-heading"><div><h2>{profileComplete ? "Sua conta" : "Complete os seus dados"}</h2><p>{profileComplete ? "Pode atualizar estes dados sempre que precisar." : "Antes de continuar, complete os dados obrigatórios do seu perfil."}</p></div>{profileComplete && <button className="close-button" type="button" onClick={() => { setShowAccount(false); setProfileNotice(""); }} aria-label="Fechar">×</button>}</div>
             {profileLoading ? <p className="muted-copy">A carregar os dados da conta...</p> : <form className="equipment-form" onSubmit={saveProfile}>
               {profileNotice && <p className="dashboard-notice" role="status">{profileNotice}</p>}
               <div className="profile-photo-editor">
@@ -404,7 +405,7 @@ export default function App() {
               </div>
               <div className="form-actions"><button className="primary-button" type="submit" disabled={profileSaving}>{profileSaving ? "A guardar..." : "Guardar dados da conta"}</button></div>
             </form>}
-          </section>}
+          </section></div>}
           <div className="dashboard-welcome">
             <div><p className="eyebrow">PAINEL DE CONTROLO</p><h1>{activeTab === "mine" ? "Os meus equipamentos" : "Consultar equipamento"}</h1><p className="muted-copy">Organize os seus bens e consulte o estado de proteção dos equipamentos.</p></div>
             {activeTab === "mine" && <button className="primary-button add-button" onClick={startNewEquipment}>＋ Registar equipamento</button>}
