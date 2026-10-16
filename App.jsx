@@ -210,6 +210,7 @@ function AdminAccessPanel({ supabase, user, onSignOut, onBack }) {
 export default function App() {
   const [screen, setScreen] = useState("login");
   const [landingMode, setLandingMode] = useState(true);
+  const [helpPage, setHelpPage] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
@@ -808,6 +809,49 @@ export default function App() {
     );
   }
 
+  if (helpPage && landingMode && screen === "login") {
+    return (
+      <main className="protege-landing help-page">
+        <header className="landing-header">
+          <a className="landing-brand" href="/" onClick={e=>{e.preventDefault();setHelpPage(false);}} aria-label="PROTEGE - Início">
+            <span className="landing-brand-shield"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></span><span>PROTEGE</span>
+          </a>
+          <div className="landing-actions"><button className="landing-login-button" onClick={()=>setHelpPage(false)}>← Voltar ao início</button><button className="landing-signup-button" onClick={()=>{setHelpPage(false);changeScreen("register");}}>Criar conta</button></div>
+        </header>
+        <section className="help-hero">
+          <p className="landing-kicker">INFORMAÇÃO · SEGURANÇA · COMUNIDADE</p>
+          <h1>Como funciona a <span>PROTEGE</span>?</h1>
+          <p>Uma forma simples de registar os seus equipamentos, reforçar a prova de posse e ajudar a que equipamentos furtados ou roubados possam ser identificados e devolvidos.</p>
+          <div className="help-notice"><strong>Gratuita e orientada para a privacidade</strong><span>A PROTEGE foi concebida para permitir o registo e a consulta de equipamentos sem expor publicamente os dados pessoais dos seus proprietários.</span></div>
+        </section>
+        <section className="help-content">
+          <div className="help-section-title"><span>01</span><div><h2>Como a PROTEGE ajuda</h2><p>O registo cria um histórico que pode ajudar a esclarecer a situação de um equipamento.</p></div></div>
+          <div className="help-steps">
+            <article><span className="help-step-icon">＋</span><h3>1. Registe o equipamento</h3><p>Crie uma conta e adicione os dados do equipamento. Junte entre duas e quatro fotografias reais, incluindo imagens do equipamento e do respetivo número de série (SN) ou IMEI.</p></article>
+            <article><span className="help-step-icon">▣</span><h3>2. Guarde um registo de posse</h3><p>O registo, os dados introduzidos e as fotografias podem servir como elementos de apoio para demonstrar que o equipamento estava na sua posse. Não substituem uma fatura, participação policial ou outra prova legal.</p></article>
+            <article><span className="help-step-icon">⌕</span><h3>3. Consulte antes de comprar</h3><p>Introduza o SN ou IMEI na Consulta rápida. Se existir uma restrição registada, a página informa que o equipamento tem uma situação assinalada, sem divulgar os dados pessoais do proprietário.</p></article>
+            <article><span className="help-step-icon">↗</span><h3>4. Ajude a resolver a situação</h3><p>As consultas ficam registadas no sistema. Se a consulta for feita por uma pessoa com conta e houver dados suficientes para um contacto seguro, a PROTEGE poderá contactá-la para tentar facilitar a comunicação entre as partes. O contacto não garante a recuperação do equipamento.</p></article>
+          </div>
+          <div className="help-privacy"><div className="help-privacy-icon">✓</div><div><h2>Privacidade e segurança</h2><p>Os dados da conta e as fotografias de prova não são apresentados na consulta pública. O acesso às informações privadas é limitado por regras de segurança. Nunca partilhe a sua palavra-passe e, em caso de furto ou roubo, participe a ocorrência às autoridades e guarde o comprovativo.</p></div></div>
+          <div className="help-section-title"><span>02</span><div><h2>Como descobrir o IMEI do smartphone ou tablet</h2><p>O IMEI é um identificador do equipamento móvel. Em dispositivos com dois cartões SIM, podem existir dois IMEI.</p></div></div>
+          <div className="help-imei-card">
+            <div className="help-phone-illustration" aria-label="Ilustração de um smartphone a mostrar o código para consultar o IMEI">
+              <svg viewBox="0 0 220 300" role="img" aria-labelledby="phone-title"><title id="phone-title">Marque asterisco, cardinal, zero, seis, cardinal para consultar o IMEI</title><rect x="34" y="5" width="152" height="286" rx="25" fill="#102944" stroke="#4bbcff" strokeWidth="3"/><rect x="45" y="27" width="130" height="238" rx="15" fill="#f6fbff"/><rect x="85" y="15" width="50" height="5" rx="3" fill="#4bbcff"/><text x="110" y="61" textAnchor="middle" fontSize="11" fill="#52708d">Telefone</text><rect x="58" y="77" width="104" height="55" rx="9" fill="#e4f3ff"/><text x="110" y="111" textAnchor="middle" fontSize="28" fontWeight="800" fill="#087bd3">*#06#</text><g fill="#dce8f2">{[0,1,2].map((r)=>[0,1,2].map((c)=><rect key={r+"-"+c} x={62+c*34} y={148+r*30} width="27" height="22" rx="6"/>))}</g><rect x="62" y="239" width="96" height="14" rx="7" fill="#dce8f2"/></svg>
+            </div>
+            <div className="help-imei-instructions"><span className="help-pill">Método mais rápido</span><h3>Marque <code>*#06#</code> na aplicação Telefone</h3><ol><li>Abra a aplicação onde costuma fazer chamadas.</li><li>Marque <strong>*#06#</strong> no teclado numérico.</li><li>O IMEI deverá aparecer automaticamente no ecrã, sem precisar de efetuar a chamada.</li><li>Copie o número para o registo PROTEGE e confirme que está correto.</li></ol><p className="help-caution">Não publique o IMEI nas redes sociais. Introduza-o apenas em serviços em que confia.</p><p>Também pode encontrar o IMEI nas definições do dispositivo, na caixa original ou na documentação de compra, dependendo do modelo.</p></div>
+          </div>
+          <div className="help-section-title"><span>03</span><div><h2>Bicicletas elétricas e trotinetes</h2><p>Procure o número de série (SN), o número de quadro ou chassis indicado pelo fabricante.</p></div></div>
+          <div className="help-serial-card">
+            <div className="help-serial-illustration"><svg viewBox="0 0 340 190" role="img" aria-label="Ilustração de uma bicicleta elétrica com indicação de onde procurar o número de série"><circle cx="68" cy="133" r="40" fill="none" stroke="#244968" strokeWidth="6"/><circle cx="267" cy="133" r="40" fill="none" stroke="#244968" strokeWidth="6"/><path d="M68 133 122 74 165 133H68L145 133 197 70 267 133M122 74h45M197 70l-20-12M185 70h30" fill="none" stroke="#21a8f4" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/><rect x="114" y="99" width="48" height="18" rx="5" fill="#d7f0ff" stroke="#087bd3" strokeWidth="2"/><path d="M138 99 138 51 214 51" fill="none" stroke="#087bd3" strokeWidth="2" strokeDasharray="4 4"/><rect x="207" y="35" width="120" height="32" rx="7" fill="#087bd3"/><text x="267" y="55" fontSize="11" fontWeight="800" textAnchor="middle" fill="#fff">N.º DE SÉRIE</text><text x="170" y="185" fontSize="10" textAnchor="middle" fill="#64819a">Ilustração indicativa — a localização varia</text></svg></div>
+            <div><h3>Onde procurar</h3><ul><li>Na parte inferior do quadro ou junto ao eixo dos pedais.</li><li>Na zona de ligação entre o quadro e a bateria.</li><li>Na parte inferior ou lateral do chassis da trotinete.</li><li>Na etiqueta do fabricante, no manual ou na fatura.</li></ul><p>O local muda conforme a marca e o modelo. Procure as indicações <strong>SN</strong>, <strong>Serial Number</strong>, <strong>Frame Number</strong> ou <strong>Chassis</strong>. Não confunda o número de série com o número do modelo.</p></div>
+          </div>
+          <div className="help-final-cta"><h2>Proteja o que é seu.</h2><p>Registe os seus equipamentos e ajude a construir uma comunidade mais informada e atenta.</p><button className="landing-signup-button" onClick={()=>{setHelpPage(false);changeScreen("register");}}>Criar conta gratuita</button><button className="landing-login-button" onClick={()=>setHelpPage(false)}>Voltar à página inicial</button></div>
+        </section>
+        <footer className="landing-footer">PROTEGE · Registo e proteção de equipamentos <span>Privacidade, prevenção e colaboração.</span></footer>
+      </main>
+    );
+  }
+
   if (landingMode && screen === "login") {
     return (
       <main className="protege-landing">
@@ -817,7 +861,7 @@ export default function App() {
             <span>PROTEGE</span>
           </a>
           <nav className="landing-nav" aria-label="Navegação principal">
-            <a className="active" href="#inicio">Início</a><a href="#consultar">Consultar</a><a href="#como-funciona">Como funciona</a><a href="#ajuda">Ajuda</a>
+            <a className="active" href="#inicio">Início</a><a href="#consultar">Consultar</a><a href="/como-funciona" onClick={e=>{e.preventDefault();setHelpPage(true);}}>Como funciona</a><a href="#ajuda">Ajuda</a>
           </nav>
           <div className="landing-actions"><button className="landing-login-button" onClick={()=>setLandingMode(false)}><span aria-hidden="true">↪</span> Entrar</button><button className="landing-signup-button" onClick={()=>changeScreen("register")}><span aria-hidden="true">♙</span> Criar conta</button></div>
         </header>
