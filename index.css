@@ -172,8 +172,8 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
 @media(max-width:700px){.admin-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-session-label{display:none}.admin-table{min-width:900px}}
 
 
-/* Diferencia visual e login administrativo separado */
-.brand-name,.dashboard-brand .brand-name{color:#c62828}
+/* Diferencia visual apenas na área administrativa */
+.admin-shell .brand-name,.admin-login-card .brand-name{color:#c62828}
 .admin-login-card{border-top:4px solid #c62828}
 .admin-login-note{margin:20px 0 0;padding-top:16px;border-top:1px solid #edf0f5;color:#7b8799;font-size:12px;line-height:1.5;text-align:center}
 .admin-error{border-color:#efbcbc;background:#fff1f1;color:#a32626}
