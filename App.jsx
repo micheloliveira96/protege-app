@@ -673,9 +673,9 @@ export default function App() {
         <section className="login-card admin-login-card">
           <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Administração privada</div></div>
           <div className="form-heading"><h1>Acesso administrativo</h1><p>Entre com as credenciais de uma conta administrativa autorizada.</p></div>
-          <form onSubmit={submit}>
-            <label htmlFor="email">Nome de utilizador ou email</label><input id="email" type="text" autoComplete="username" placeholder="admin" value={email} onChange={e=>setEmail(e.target.value)} required disabled={loading}/>
-            <label htmlFor="password">Palavra-passe</label><input id="password" type="password" autoComplete="current-password" placeholder="Introduza a palavra-passe" value={password} onChange={e=>setPassword(e.target.value)} required disabled={loading}/>
+          <form onSubmit={submit} autoComplete="on">
+            <label htmlFor="email">Nome de utilizador ou email</label><input id="email" name="username" type="text" autoComplete="username" placeholder="admin" value={email} onChange={e=>setEmail(e.target.value)} required disabled={loading}/>
+            <label htmlFor="password">Palavra-passe</label><input id="password" name="password" type="password" autoComplete="current-password" placeholder="Introduza a palavra-passe" value={password} onChange={e=>setPassword(e.target.value)} required disabled={loading}/>
             <button className="primary-button" type="submit" disabled={loading}>{loading ? "A verificar..." : "Entrar na administração"}</button>
             {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
           </form>
@@ -855,9 +855,9 @@ export default function App() {
       <section className="login-card">
         <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 40 10v12c0 10-6.8 17.5-16 22C14.8 39.5 8 32 8 22V10L24 4Z"/><path d="m16 23 5 5 11-12"/></svg></div><div className="brand-name">PROTEGE</div><div className="brand-tagline">Registo e proteção de equipamentos</div></div>
         <div className="form-heading"><h1>{copy[screen][0]}</h1><p>{copy[screen][1]}</p></div>
-        <form onSubmit={submit}>
-          <label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" placeholder="nome@exemplo.pt" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}/>
-          {screen !== "reset" && <><label htmlFor="password">Palavra-passe</label><input id="password" type="password" autoComplete={screen === "register" ? "new-password" : "current-password"} placeholder="Introduza a sua palavra-passe" value={password} onChange={e => setPassword(e.target.value)} minLength={6} required disabled={loading}/></>}
+        <form onSubmit={submit} autoComplete="on">
+          <label htmlFor="email">Email</label><input id="email" name="username" type="email" autoComplete={screen === "login" ? "username" : "email"} placeholder="nome@exemplo.pt" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading}/>
+          {screen !== "reset" && <><label htmlFor="password">Palavra-passe</label><input id="password" name="password" type="password" autoComplete={screen === "register" ? "new-password" : "current-password"} placeholder="Introduza a sua palavra-passe" value={password} onChange={e => setPassword(e.target.value)} minLength={6} required disabled={loading}/></>}
           {screen === "login" && <div className="forgot-row"><button className="text-button" type="button" onClick={() => changeScreen("reset")} disabled={loading}>Esqueceu-se da palavra-passe?</button></div>}
           <button className="primary-button" type="submit" disabled={loading}>{loading ? "Aguarde..." : screen === "login" ? "Entrar" : screen === "register" ? "Criar conta" : "Enviar instruções"}</button>
           {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
