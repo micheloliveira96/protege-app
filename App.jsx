@@ -784,9 +784,9 @@ export default function App() {
             <h2>Registe os seus equipamentos<br/>e <span>aumente a sua segurança.</span></h2>
             <p className="landing-description">Uma plataforma em Portugal para registo e consulta de equipamentos eletrónicos, ajudando no combate ao furto e roubo.</p>
             <form className="landing-lookup" id="consultar" onSubmit={lookupEquipment}>
-              <span className="landing-search-icon" aria-hidden="true">⌕</span>
-              <input aria-label="Número de série para consultar" value={lookupSerial} onChange={e=>setLookupSerial(e.target.value)} placeholder="Digite o número de série (SN) para consultar" minLength={3} maxLength={160} required/>
-              <button type="submit" disabled={lookupLoading}><span aria-hidden="true">⌕</span>{lookupLoading ? "A consultar..." : "Consultar"}</button>
+              <label className="landing-lookup-title" htmlFor="landing-serial">Consulta rápida</label>
+              <input id="landing-serial" aria-label="Número de série para consulta" value={lookupSerial} onChange={e=>setLookupSerial(e.target.value)} placeholder="Digite o número de série (SN) para consultar" minLength={3} maxLength={160} required/>
+              <button type="submit" disabled={lookupLoading}>{lookupLoading ? "A consultar..." : "Consultar"}</button>
             </form>
             {lookupResult && <div className={"landing-lookup-result "+(lookupResult.error||!lookupResult.found?"lookup-not-found":lookupResult.status==="Roubado"||lookupResult.restriction_status==="Com restrição"?"restriction-red":"restriction-green")}>
               {lookupResult.error ? <><strong>Não foi possível consultar</strong><p>{lookupResult.error}</p></> : !lookupResult.found ? <><strong>Nenhum registo encontrado</strong><p>Não foi encontrado um equipamento com esse número de série.</p></> : <><span className="lookup-status">{lookupResult.status==="Roubado"||lookupResult.restriction_status==="Com restrição"?"COM RESTRIÇÃO":"SEM RESTRIÇÃO"}</span><strong>{lookupResult.name}</strong><p>{lookupResult.status==="Roubado"?"Atenção: este equipamento está registado como roubado.":lookupResult.restriction_status==="Com restrição"?"Atenção: este equipamento tem uma restrição registada na PROTEGE.":"Não existe uma restrição assinalada neste registo."}</p></>}
