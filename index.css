@@ -385,3 +385,9 @@ footer { margin-top: 24px; color: #98a2b2; text-align: center; font-size: 11px; 
    padding:0 20px;
  }
 }
+
+/* Declaração de responsabilidade no registo de equipamento */
+.ownership-confirmation{margin-top:4px;padding:14px 16px;border:1px solid #c9d8ea;border-radius:12px;background:#f5f9ff}
+.ownership-confirmation>label{display:flex;align-items:flex-start;gap:11px;color:#263b53;font-size:13px;line-height:1.65;font-weight:500;cursor:pointer}
+.ownership-confirmation input[type="checkbox"]{flex:0 0 auto;width:18px;height:18px;margin-top:2px;accent-color:#087af0}
+#eq-purchase-proof{display:block;width:100%;padding:12px;border:1px dashed #b9c9dc;border-radius:10px;background:#f8fbff}
