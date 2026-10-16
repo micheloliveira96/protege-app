@@ -45,7 +45,16 @@ function AdminPanel({ supabase, user, onSignOut }) {
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [username, setUsername] = useState("");
   const [createPassword, setCreatePassword] = useState("");
+  const [confirmCreatePassword, setConfirmCreatePassword] = useState("");
+  const [ownCurrentPassword, setOwnCurrentPassword] = useState("");
   const [ownPassword, setOwnPassword] = useState("");
+  const [confirmOwnPassword, setConfirmOwnPassword] = useState("");
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showOwnPasswords, setShowOwnPasswords] = useState(false);
+  const [resetAdmin, setResetAdmin] = useState(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [confirmResetPassword, setConfirmResetPassword] = useState("");
+  const [showResetPasswords, setShowResetPasswords] = useState(false);
   const [newUsername, setNewUsername] = useState(user.user_metadata?.username || "admin");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -68,8 +77,10 @@ function AdminPanel({ supabase, user, onSignOut }) {
   async function createAdmin(event) {
     event.preventDefault(); setBusy(true); setError(""); setMessage("");
     try {
+      if (createPassword.length < 12) throw new Error("A palavra-passe deve ter pelo menos 12 caracteres.");
+      if (createPassword !== confirmCreatePassword) throw new Error("A confirmação da palavra-passe não coincide.");
       await callAdmin("create", { username: username.trim(), password: createPassword });
-      setUsername(""); setCreatePassword("");
+      setUsername(""); setCreatePassword(""); setConfirmCreatePassword(""); setShowCreatePassword(false);
       setMessage("Conta administrativa criada com sucesso.");
       await loadAdmins();
     } catch (e) { setError(e.message || "Não foi possível criar a conta."); }
@@ -81,15 +92,33 @@ function AdminPanel({ supabase, user, onSignOut }) {
       if (newUsername.trim() && newUsername.trim().toLowerCase() !== (user.user_metadata?.username || "")) {
         await callAdmin("change-username", { username: newUsername.trim() });
       }
-      if (ownPassword) {
+      if (ownPassword || ownCurrentPassword || confirmOwnPassword) {
+        if (!ownCurrentPassword) throw new Error("Introduza a palavra-passe antiga.");
         if (ownPassword.length < 12) throw new Error("A nova palavra-passe deve ter pelo menos 12 caracteres.");
-        const { error } = await supabase.auth.updateUser({ password: ownPassword });
-        if (error) throw error;
+        if (ownPassword !== confirmOwnPassword) throw new Error("A confirmação da nova palavra-passe não coincide.");
+        if (ownPassword === ownCurrentPassword) throw new Error("A nova palavra-passe deve ser diferente da antiga.");
+        const { error: verifyError } = await supabase.auth.signInWithPassword({ email: user.email, password: ownCurrentPassword });
+        if (verifyError) throw new Error("A palavra-passe antiga está incorreta.");
+        const { error: updateError } = await supabase.auth.updateUser({ password: ownPassword });
+        if (updateError) throw updateError;
       }
-      setOwnPassword("");
+      setOwnCurrentPassword(""); setOwnPassword(""); setConfirmOwnPassword(""); setShowOwnPasswords(false);
       setMessage("Dados da conta atualizados. Se alterou o nome de utilizador, use-o na próxima sessão.");
       await loadAdmins();
     } catch (e) { setError(e.message || "Não foi possível atualizar a conta."); }
+    finally { setBusy(false); }
+  }
+  async function changeAdminPassword(event) {
+    event.preventDefault();
+    if (!resetAdmin) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      if (resetPassword.length < 12) throw new Error("A nova palavra-passe deve ter pelo menos 12 caracteres.");
+      if (resetPassword !== confirmResetPassword) throw new Error("A confirmação da nova palavra-passe não coincide.");
+      await callAdmin("change-password", { user_id: resetAdmin.user_id, password: resetPassword });
+      setMessage("Palavra-passe de " + resetAdmin.username + " alterada com sucesso.");
+      setResetAdmin(null); setResetPassword(""); setConfirmResetPassword(""); setShowResetPasswords(false);
+    } catch (e) { setError(e.message || "Não foi possível alterar a palavra-passe."); }
     finally { setBusy(false); }
   }
   async function removeAdmin(item) {
@@ -127,9 +156,15 @@ function AdminPanel({ supabase, user, onSignOut }) {
           <form className="equipment-form" onSubmit={updateAdminAccount}>
             <div className="field-grid">
               <div><label htmlFor="admin-own-username">Nome de utilizador</label><input id="admin-own-username" value={newUsername} onChange={e=>setNewUsername(e.target.value)} minLength={3} maxLength={30} pattern="[A-Za-z0-9._-]+" required/></div>
-              <div><label htmlFor="admin-own-password">Nova palavra-passe</label><input id="admin-own-password" type="password" autoComplete="new-password" placeholder="Mínimo de 12 caracteres" value={ownPassword} onChange={e=>setOwnPassword(e.target.value)} minLength={12}/></div>
             </div>
-            <p className="field-help">Ao alterar o nome, o acesso passa a usar esse nome de utilizador. A palavra-passe só muda se preencher o campo.</p>
+            <div className="password-section"><h3>Alterar palavra-passe</h3><p className="field-help">Para sua segurança, confirme a palavra-passe antiga antes de definir uma nova.</p>
+              <div className="field-grid">
+                <div className="password-field"><label htmlFor="admin-own-current-password">Palavra-passe antiga</label><div className="password-input-wrap"><input id="admin-own-current-password" type={showOwnPasswords ? "text" : "password"} autoComplete="current-password" value={ownCurrentPassword} onChange={e=>setOwnCurrentPassword(e.target.value)} placeholder="Palavra-passe atual"/><button type="button" className="password-visibility" onClick={()=>setShowOwnPasswords(v=>!v)} aria-label={showOwnPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showOwnPasswords ? "Ocultar" : "Mostrar"}</button></div></div>
+                <div className="password-field"><label htmlFor="admin-own-password">Nova palavra-passe</label><div className="password-input-wrap"><input id="admin-own-password" type={showOwnPasswords ? "text" : "password"} autoComplete="new-password" placeholder="Mínimo de 12 caracteres" value={ownPassword} onChange={e=>setOwnPassword(e.target.value)} minLength={12}/><button type="button" className="password-visibility" onClick={()=>setShowOwnPasswords(v=>!v)} aria-label={showOwnPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showOwnPasswords ? "Ocultar" : "Mostrar"}</button></div></div>
+                <div className="password-field"><label htmlFor="admin-own-confirm-password">Confirmar nova palavra-passe</label><div className="password-input-wrap"><input id="admin-own-confirm-password" type={showOwnPasswords ? "text" : "password"} autoComplete="new-password" value={confirmOwnPassword} onChange={e=>setConfirmOwnPassword(e.target.value)} minLength={12}/><button type="button" className="password-visibility" onClick={()=>setShowOwnPasswords(v=>!v)} aria-label={showOwnPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showOwnPasswords ? "Ocultar" : "Mostrar"}</button></div></div>
+              </div>
+            </div>
+            <p className="field-help">A palavra-passe só será alterada se preencher os três campos. A nova palavra-passe deve ter pelo menos 12 caracteres.</p>
             <div className="form-actions"><button className="primary-button" type="submit" disabled={busy}>{busy ? "A guardar..." : "Guardar alterações"}</button></div>
           </form>
         </section>
@@ -138,7 +173,8 @@ function AdminPanel({ supabase, user, onSignOut }) {
           <form className="equipment-form" onSubmit={createAdmin}>
             <div className="field-grid">
               <div><label htmlFor="new-admin-username">Nome de utilizador</label><input id="new-admin-username" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex.: operador01" minLength={3} maxLength={30} pattern="[A-Za-z0-9._-]+" required/></div>
-              <div><label htmlFor="new-admin-password">Palavra-passe inicial</label><input id="new-admin-password" type="password" autoComplete="new-password" value={createPassword} onChange={e=>setCreatePassword(e.target.value)} placeholder="Mínimo de 12 caracteres" minLength={12} required/></div>
+              <div className="password-field"><label htmlFor="new-admin-password">Palavra-passe inicial</label><div className="password-input-wrap"><input id="new-admin-password" type={showCreatePassword ? "text" : "password"} autoComplete="new-password" value={createPassword} onChange={e=>setCreatePassword(e.target.value)} placeholder="Mínimo de 12 caracteres" minLength={12} required/><button type="button" className="password-visibility" onClick={()=>setShowCreatePassword(v=>!v)} aria-label={showCreatePassword ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}>{showCreatePassword ? "Ocultar" : "Mostrar"}</button></div></div>
+              <div className="password-field"><label htmlFor="confirm-new-admin-password">Confirmar palavra-passe</label><div className="password-input-wrap"><input id="confirm-new-admin-password" type={showCreatePassword ? "text" : "password"} autoComplete="new-password" value={confirmCreatePassword} onChange={e=>setConfirmCreatePassword(e.target.value)} placeholder="Repita a palavra-passe" minLength={12} required/><button type="button" className="password-visibility" onClick={()=>setShowCreatePassword(v=>!v)} aria-label={showCreatePassword ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}>{showCreatePassword ? "Ocultar" : "Mostrar"}</button></div></div>
             </div>
             <p className="field-help">Use uma palavra-passe única com pelo menos 12 caracteres. Entregue as credenciais diretamente e em segurança.</p>
             <div className="form-actions"><button className="primary-button" type="submit" disabled={busy}>{busy ? "A criar..." : "Criar conta administrativa"}</button></div>
@@ -146,9 +182,17 @@ function AdminPanel({ supabase, user, onSignOut }) {
         </section>
         <section className="equipment-list-card admin-list-card">
           <div className="list-heading"><div><h2>Contas administrativas</h2><p>Somente o superadministrador pode gerir estas contas.</p></div><button className="outline-button" onClick={loadAdmins} disabled={loadingAdmins}>Atualizar</button></div>
+          {resetAdmin && <form className="equipment-form admin-reset-form" onSubmit={changeAdminPassword}>
+            <div className="form-card-heading"><div><h3>Alterar palavra-passe de {resetAdmin.username}</h3><p>Defina uma nova palavra-passe para esta conta administrativa.</p></div><button className="close-button" type="button" onClick={()=>{setResetAdmin(null);setResetPassword("");setConfirmResetPassword("");setShowResetPasswords(false);}} aria-label="Cancelar">×</button></div>
+            <div className="field-grid">
+              <div className="password-field"><label htmlFor="reset-admin-password">Nova palavra-passe</label><div className="password-input-wrap"><input id="reset-admin-password" type={showResetPasswords ? "text" : "password"} autoComplete="new-password" value={resetPassword} onChange={e=>setResetPassword(e.target.value)} minLength={12} required/><button type="button" className="password-visibility" onClick={()=>setShowResetPasswords(v=>!v)} aria-label={showResetPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showResetPasswords ? "Ocultar" : "Mostrar"}</button></div></div>
+              <div className="password-field"><label htmlFor="confirm-reset-admin-password">Confirmar nova palavra-passe</label><div className="password-input-wrap"><input id="confirm-reset-admin-password" type={showResetPasswords ? "text" : "password"} autoComplete="new-password" value={confirmResetPassword} onChange={e=>setConfirmResetPassword(e.target.value)} minLength={12} required/><button type="button" className="password-visibility" onClick={()=>setShowResetPasswords(v=>!v)} aria-label={showResetPasswords ? "Ocultar palavras-passe" : "Mostrar palavras-passe"}>{showResetPasswords ? "Ocultar" : "Mostrar"}</button></div></div>
+            </div><div className="form-actions"><button className="primary-button" type="submit" disabled={busy}>{busy ? "A guardar..." : "Guardar nova palavra-passe"}</button></div>
+          </form>}
           {loadingAdmins ? <div className="empty-state">A carregar as contas...</div> : admins.length === 0 ? <div className="empty-state">Não existem contas administrativas.</div> :
             <div className="equipment-table-wrap"><table className="equipment-table admin-table"><thead><tr><th>Utilizador</th><th>Tipo de acesso</th><th>Conta de autenticação</th><th>Ações</th></tr></thead><tbody>
               {admins.map(item=><tr key={item.user_id}><td><strong>{item.username || "Sem nome"}</strong></td><td>{item.role === "super_admin" ? "Superadministrador" : "Administrador"}</td><td>{item.email}</td><td><div className="table-actions">
+                {item.role !== "super_admin" && <button className="text-button" disabled={busy} onClick={()=>{setResetAdmin(item);setResetPassword("");setConfirmResetPassword("");setShowResetPasswords(false);setError("");setMessage("");}}>Alterar palavra-passe</button>}
                 {item.role !== "super_admin" && <button className="delete-button" disabled={busy} onClick={()=>removeAdmin(item)}>Remover</button>}
                 {item.role !== "super_admin" && <button className="text-button" disabled={busy} onClick={()=>handOverSuperAdmin(item)}>Transferir superadmin</button>}
               </div></td></tr>)}
