@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabaseClient.js";
 import AdminDashboard from "./AdminDashboard.jsx";
 import SupportChat from "./SupportChat.jsx";
@@ -262,9 +265,54 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
-    return () => listener.subscription.unsubscribe();
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setSession(data.session);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (active) setSession(nextSession);
+    });
+
+    let deepLinkListener;
+    const handleOAuthUrl = async (url) => {
+      if (!url || !url.startsWith("pt.protege.app://login-callback")) return;
+      try {
+        const callbackUrl = new URL(url);
+        const code = callbackUrl.searchParams.get("code");
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+        } else {
+          const hash = new URLSearchParams(callbackUrl.hash.replace(/^#/, ""));
+          const accessToken = hash.get("access_token");
+          const refreshToken = hash.get("refresh_token");
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            if (error) throw error;
+          }
+        }
+        await Browser.close().catch(() => {});
+      } catch (error) {
+        console.error("Falha ao concluir login Google no Android:", error);
+      }
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      CapacitorApp.addListener("appUrlOpen", ({ url }) => handleOAuthUrl(url))
+        .then((handle) => { deepLinkListener = handle; });
+      CapacitorApp.getLaunchUrl().then((launch) => {
+        if (launch?.url) handleOAuthUrl(launch.url);
+      }).catch(() => {});
+    }
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+      deepLinkListener?.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -465,14 +513,22 @@ export default function App() {
     setNotice("");
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const isNative = Capacitor.isNativePlatform();
+      const redirectTo = isNative
+        ? "pt.protege.app://login-callback"
+        : window.location.origin;
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin,
+          redirectTo,
+          skipBrowserRedirect: isNative,
           queryParams: { access_type: "offline", prompt: "select_account" }
         }
       });
       if (error) throw error;
+      if (isNative && data?.url) {
+        await Browser.open({ url: data.url });
+      }
     } catch (error) {
       setNotice(error?.message || "Não foi possível iniciar sessão com Google.");
       setLoading(false);
